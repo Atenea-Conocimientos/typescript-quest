@@ -109,6 +109,7 @@ class FactoryScene extends Phaser.Scene {
 
   setActive(active: boolean) {
     this.active = active;
+    if (!this.children) return;
     const statusText = this.children.getByName('statusText') as Phaser.GameObjects.Text | null;
     if (statusText) {
       statusText.setText(active ? 'UNIT-01 — RUNNING ▶' : 'UNIT-01 — STANDBY');
@@ -221,8 +222,11 @@ export default function FactoryCanvas({ isRunning }: FactoryCanvasProps) {
   }, []);
 
   useEffect(() => {
-    if (sceneRef.current && sceneRef.current.scene.isActive()) {
+    if (!sceneRef.current) return;
+    try {
       sceneRef.current.setActive(isRunning);
+    } catch {
+      // Scene not yet fully initialized — skip
     }
   }, [isRunning]);
 
