@@ -1,0 +1,27 @@
+{
+  "name": "typescript-quest",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript Quest - Olympus Factory: Learn TypeScript by programming robots",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "monaco-editor": "^0.52.0",
+    "phaser": "^3.88.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild-wasm": "^0.24.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}
