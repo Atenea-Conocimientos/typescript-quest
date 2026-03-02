@@ -48,6 +48,7 @@ console.log(\`Primer aprobado: \${aprobados[0].nombre}\`)`,
     output.some((l) => l.includes('Aprobados: 2 / 3')) &&
     output.some((l) => l.includes('Perno M6')),
   stampsRequired: 5,
+  mechanic: 'cards' as const,
 };
 
 export default level10;

@@ -48,6 +48,7 @@ console.log(identificarPieza(null))`,
     output.some((l) => l.includes('PERNO M6')) &&
     output.some((l) => l.includes('Sensor vacío')),
   stampsRequired: 4,
+  mechanic: 'detector' as const,
 };
 
 export default level11;

@@ -6,6 +6,8 @@ interface FactoryCanvasProps {
   stampedCount: number;
   onRunCode?: () => Promise<boolean>;
   active?: boolean;
+  lastOutput?: string[];   // for speech mechanic: shows bubble with logged text
+  lastSuccess?: boolean;
 }
 
 // ── Phaser Scene ──────────────────────────────────────────────────────────────
@@ -234,6 +236,8 @@ export default function FactoryCanvas({
   stampedCount,
   onRunCode,
   active = true,
+  lastOutput = [],
+  lastSuccess = false,
 }: FactoryCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -370,11 +374,47 @@ export default function FactoryCanvas({
         </div>
       )}
 
-      {/* Pulse keyframe */}
+      {/* Speech bubble (for 'speech' mechanic / console.log lesson) */}
+      {lastSuccess && lastOutput.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '14%',
+          left: '54%',
+          transform: 'translateX(-50%)',
+          background: 'white',
+          color: '#0d1117',
+          padding: '10px 18px',
+          borderRadius: 12,
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: 15,
+          fontWeight: 700,
+          maxWidth: 220,
+          textAlign: 'center',
+          zIndex: 30,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+          animation: 'speechPop 0.25s ease',
+          pointerEvents: 'none',
+        }}>
+          {lastOutput[0]}
+          <div style={{
+            position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)',
+            width: 0, height: 0,
+            borderLeft: '10px solid transparent',
+            borderRight: '10px solid transparent',
+            borderTop: '10px solid white',
+          }} />
+        </div>
+      )}
+
+      {/* Pulse + speech keyframes */}
       <style>{`
         @keyframes pulse {
           0%, 100% { box-shadow: 0 0 16px rgba(124,58,237,0.4); }
           50% { box-shadow: 0 0 32px rgba(124,58,237,0.8); }
+        }
+        @keyframes speechPop {
+          from { transform: translateX(-50%) scale(0.5); opacity: 0; }
+          to   { transform: translateX(-50%) scale(1);   opacity: 1; }
         }
       `}</style>
     </div>

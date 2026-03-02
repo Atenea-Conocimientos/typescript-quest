@@ -21,6 +21,7 @@ console.log(fabrica + ": " + pernos + " pernos")`,
   validate: (output: string[]) =>
     output.some((line) => line.includes('Olympus') && line.includes('5')),
   stampsRequired: 3,
+  mechanic: 'tanks' as const,
 };
 
 export default level2;

@@ -38,6 +38,7 @@ console.log(\`Tornillos: \${tornillos} | Temp: \${temp}°C | QA: \${pasoQA}\`)`,
     return linea1 && linea2;
   },
   stampsRequired: 3,
+  mechanic: 'scanner' as const,
 };
 
 export default level4;

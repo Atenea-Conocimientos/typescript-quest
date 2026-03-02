@@ -64,6 +64,7 @@ console.log(\`Sin proveedor: \${sinProv?.nombre ?? "ninguno"}\`)`,
     output.some((l) => l.includes('Productos filtrados: 2')) &&
     output.some((l) => l.includes('Peso total del lote: 9g')),
   stampsRequired: 5,
+  mechanic: 'pipeline' as const,
 };
 
 export default level13;

@@ -3,26 +3,34 @@ import EditorPanel from '../editor/EditorPanel';
 import Mentor from '../mentors/Mentor';
 import { LEVELS_BY_ID, INITIAL_LEVEL_ID, ALL_LEVELS } from '../levels';
 import { runCode } from '../engine/GameEngine';
+import { RunResult } from '../engine/types';
 import FactoryCanvas from './FactoryCanvas';
+import MechanicCanvas from './MechanicCanvas';
 import DevPanel from './DevPanel';
 
 export default function GameScreen() {
   const [currentLevelId, setCurrentLevelId] = useState(INITIAL_LEVEL_ID);
   const [completedLevels, setCompletedLevels] = useState<Set<string>>(new Set());
-
   const [successState, setSuccessState] = useState(false);
   const [stampedCount, setStampedCount] = useState(0);
 
-  // Track current code for box-click runs (initialized to starter code)
+  // Last run output — shared between EditorPanel (Deploy) and canvas mechanics
+  const [lastOutput, setLastOutput]   = useState<string[]>([]);
+  const [lastSuccess, setLastSuccess] = useState(false);
+
   const currentCodeRef = useRef<string>(LEVELS_BY_ID[INITIAL_LEVEL_ID]?.starterCode ?? '');
 
   const level = LEVELS_BY_ID[currentLevelId];
   const stampsRequired = level.stampsRequired ?? 0;
+  const usesPhaser = level.mechanic === 'speech';
 
-  function handleResult(result: { success: boolean; output: string[] }) {
-    // For levels without stamp mechanic, validate on Deploy
+  // ── Deploy button handler (EditorPanel) ──────────────────────────────────────
+  function handleResult(result: RunResult) {
+    setLastOutput(result.output);
+    const valid = result.success && level.validate(result.output);
+    setLastSuccess(valid);
     if (stampsRequired === 0) {
-      if (result.success && level.validate(result.output)) {
+      if (valid) {
         setSuccessState(true);
         setCompletedLevels((prev) => new Set([...prev, currentLevelId]));
       } else {
@@ -31,12 +39,14 @@ export default function GameScreen() {
     }
   }
 
-  // Stamp: run current code, validate, increment stamp → returns true if stamped
+  // ── FactoryCanvas stamp handler (speech mechanic) ─────────────────────────────
   const handleRunCode = useCallback(async (): Promise<boolean> => {
     const code = currentCodeRef.current;
     const result = await runCode(code);
-
-    if (result.success && level.validate(result.output)) {
+    setLastOutput(result.output);
+    const valid = result.success && level.validate(result.output);
+    setLastSuccess(valid);
+    if (valid) {
       setStampedCount((prev) => {
         const next = prev + 1;
         if (next >= stampsRequired) {
@@ -50,6 +60,32 @@ export default function GameScreen() {
     return false;
   }, [level, stampsRequired, currentLevelId]);
 
+  // ── MechanicCanvas activate handler (all non-speech mechanics) ───────────────
+  const handleActivate = useCallback(async (): Promise<{ output: string[]; success: boolean }> => {
+    const code = currentCodeRef.current;
+    const result = await runCode(code);
+    setLastOutput(result.output);
+    const valid = result.success && level.validate(result.output);
+    setLastSuccess(valid);
+    if (valid) {
+      if (stampsRequired > 0) {
+        setStampedCount((prev) => {
+          const next = prev + 1;
+          if (next >= stampsRequired) {
+            setSuccessState(true);
+            setCompletedLevels((c) => new Set([...c, currentLevelId]));
+          }
+          return next;
+        });
+      } else {
+        setSuccessState(true);
+        setCompletedLevels((c) => new Set([...c, currentLevelId]));
+      }
+    }
+    return { output: result.output, success: valid };
+  }, [level, stampsRequired, currentLevelId]);
+
+  // ── Navigation ────────────────────────────────────────────────────────────────
   function handleNextLevel() {
     const currentIndex = ALL_LEVELS.findIndex((l) => l.id === currentLevelId);
     if (currentIndex < ALL_LEVELS.length - 1) {
@@ -57,6 +93,8 @@ export default function GameScreen() {
       setCurrentLevelId(nextLevel.id);
       setSuccessState(false);
       setStampedCount(0);
+      setLastOutput([]);
+      setLastSuccess(false);
       currentCodeRef.current = nextLevel.starterCode ?? '';
     }
   }
@@ -66,8 +104,27 @@ export default function GameScreen() {
     setCurrentLevelId(levelId);
     setSuccessState(false);
     setStampedCount(0);
+    setLastOutput([]);
+    setLastSuccess(false);
     currentCodeRef.current = l?.starterCode ?? '';
   }
+
+  // ── Hint text per mechanic ────────────────────────────────────────────────────
+  const mechanicHints: Record<string, string> = {
+    speech:      `Escribí tu código y hacé click en 🚀 Deploy para ver hablar al robot. Cuando aparezca el mensaje correcto, usá ¡SELLAR! en la fábrica.`,
+    tanks:       `Completá las variables y Deploy. Luego hacé click en ⚡ LLENAR DEPÓSITO para ver los tanques llenarse.`,
+    assembler:   `Completá el template literal y Deploy. Hacé click en 🔩 ENSAMBLAR para ver las piezas unirse.`,
+    scanner:     `Completá los tipos y hacé click en 🔍 ESCANEAR TIPOS para ver el escáner identificarlos.`,
+    sorter:      `Completá los operadores y hacé click en 📦 CLASIFICAR CAJA para ver a dónde va la caja.`,
+    'energy-bar':`Completá la condición del while y hacé click en ▶️ INICIAR TURNO para ver la energía drenar.`,
+    grid:        `Completá los for loops y hacé click en 🏭 MAPEAR ESTACIONES para ver la grilla iluminarse.`,
+    warehouse:   `Completá el código y hacé click en 📦 CARGAR INVENTARIO para llenar el almacén.`,
+    machine:     `Completá las funciones y hacé click en ⚙️ EJECUTAR FUNCIÓN para ver la máquina procesar.`,
+    cards:       `Completá los objetos y hacé click en 🗂️ PROCESAR CATÁLOGO para ver las fichas.`,
+    detector:    `Completá el código y hacé click en 🔬 IDENTIFICAR PIEZA para activar el sensor.`,
+    panel:       `Completá el enum y hacé click en 📊 ACTUALIZAR ESTADOS para ver el panel.`,
+    pipeline:    `Completá el pipeline y hacé click en 🔄 EJECUTAR PIPELINE para ver el filter/reduce.`,
+  };
 
   return (
     <div style={{
@@ -105,11 +162,9 @@ export default function GameScreen() {
             <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
               🎯 <strong>Objetivo:</strong> {level.objective}
             </p>
-            {stampsRequired > 0 && (
-              <p style={{ fontSize: 11, color: 'var(--cyan-light)', margin: '6px 0 0', lineHeight: 1.4 }}>
-                📦 Cuando una caja llegue a la estación, hacé click en <strong>¡SELLAR!</strong> para estamparla con tu código. ¡Sellá las {stampsRequired} para completar!
-              </p>
-            )}
+            <p style={{ fontSize: 11, color: 'var(--cyan-light)', margin: '6px 0 0', lineHeight: 1.4 }}>
+              {mechanicHints[level.mechanic] ?? ''}
+            </p>
           </div>
 
           {/* Mentor hint */}
@@ -145,9 +200,7 @@ export default function GameScreen() {
               return (
                 <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {phaseBreak && (
-                    <div style={{
-                      width: 1, height: 16, background: 'var(--border)', marginRight: 2,
-                    }} />
+                    <div style={{ width: 1, height: 16, background: 'var(--border)', marginRight: 2 }} />
                   )}
                   <button
                     onClick={() => handleLevelChange(l.id)}
@@ -170,13 +223,25 @@ export default function GameScreen() {
             })}
           </div>
 
-          {/* Factory Canvas */}
+          {/* Canvas area */}
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-            <FactoryCanvas
-              stampsRequired={stampsRequired}
-              stampedCount={stampedCount}
-              onRunCode={stampsRequired > 0 ? handleRunCode : undefined}
-            />
+            {usesPhaser ? (
+              <FactoryCanvas
+                stampsRequired={stampsRequired}
+                stampedCount={stampedCount}
+                onRunCode={stampsRequired > 0 ? handleRunCode : undefined}
+                lastOutput={lastOutput}
+                lastSuccess={lastSuccess}
+              />
+            ) : (
+              <MechanicCanvas
+                key={currentLevelId}
+                mechanic={level.mechanic}
+                stampsRequired={stampsRequired}
+                stampedCount={stampedCount}
+                onActivate={handleActivate}
+              />
+            )}
 
             {/* Success Overlay */}
             {successState && (
@@ -184,14 +249,14 @@ export default function GameScreen() {
                 position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)',
                 background: '#22c55e22', border: '1px solid #22c55e88', borderRadius: 12,
                 padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14,
-                backdropFilter: 'blur(8px)', whiteSpace: 'nowrap',
+                backdropFilter: 'blur(8px)', whiteSpace: 'nowrap', zIndex: 40,
               }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', marginBottom: 2 }}>
-                    ✅ {stampsRequired > 0 ? `¡${stampsRequired} cajas selladas!` : '¡Objetivo completado!'}
+                    ✅ {stampsRequired > 0 ? `¡${stampsRequired} ciclos completados!` : '¡Objetivo completado!'}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                    La fábrica está produciendo {level.title.toLowerCase()} 🔩
+                    La fábrica dominó {level.concept.toLowerCase()} 🔩
                   </div>
                 </div>
                 {ALL_LEVELS.findIndex((l) => l.id === currentLevelId) < ALL_LEVELS.length - 1 && (
@@ -211,7 +276,6 @@ export default function GameScreen() {
         </div>
       </div>
 
-      {/* Dev panel — only visible when toggled */}
       <DevPanel level={level} stampedCount={stampedCount} stampsRequired={stampsRequired} />
     </div>
   );

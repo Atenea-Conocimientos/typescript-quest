@@ -22,6 +22,7 @@ console.log(\`Robot: \${nombre} | Velocidad: \${velocidad}\`)`,
       line.includes('Robot:') && line.includes('Olympus') && line.includes('100')
     ),
   stampsRequired: 3,
+  mechanic: 'assembler' as const,
 };
 
 export default level3;

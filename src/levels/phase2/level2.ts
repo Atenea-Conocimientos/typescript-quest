@@ -38,6 +38,7 @@ if (!activa) {
   validate: (output: string[]) =>
     output.some((line) => line.includes('RETRABAJAR')),
   stampsRequired: 3,
+  mechanic: 'sorter' as const,
 };
 
 export default level5;

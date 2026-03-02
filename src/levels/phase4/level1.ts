@@ -38,6 +38,7 @@ console.log(\`Lote más grande: \${maximo} piezas\`)`,
     output.some((l) => l.includes('Total lotes: 5')) &&
     output.some((l) => l.includes('Lote más grande: 200')),
   stampsRequired: 4,
+  mechanic: 'warehouse' as const,
 };
 
 export default level8;

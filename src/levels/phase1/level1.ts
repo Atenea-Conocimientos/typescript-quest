@@ -13,6 +13,7 @@ console.log("???")`,
   solution: `console.log("PERNO LISTO")`,
   validate: (output: string[]) => output.some((line) => line.includes('PERNO LISTO')),
   stampsRequired: 5,
+  mechanic: 'speech' as const,
 };
 
 export default level1;

@@ -60,6 +60,7 @@ procesarEstado(EstadoLinea.PAUSA)`,
     output.some((l) => l.includes('técnico')) &&
     output.some((l) => l.includes('Estado:')),
   stampsRequired: 4,
+  mechanic: 'panel' as const,
 };
 
 export default level12;

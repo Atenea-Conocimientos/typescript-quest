@@ -35,6 +35,7 @@ console.log(\`Turno finalizado. Total: \${piezas} piezas\`)`,
   validate: (output: string[]) =>
     output.some((l) => l.includes('Turno finalizado') && l.includes('10 piezas')),
   stampsRequired: 4,
+  mechanic: 'energy-bar' as const,
 };
 
 export default level6;

@@ -38,6 +38,7 @@ console.log(\`Total estaciones: \${filas * columnas}\`)`,
     output.some((l) => l.includes('Total estaciones: 16')) &&
     output.some((l) => l.includes('Estación 1')),
   stampsRequired: 4,
+  mechanic: 'grid' as const,
 };
 
 export default level7;

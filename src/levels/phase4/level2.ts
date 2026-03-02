@@ -37,6 +37,7 @@ console.log(\`\${etiq} → Eficiencia: \${efic.toFixed(1)}%\`)`,
   validate: (output: string[]) =>
     output.some((l) => l.includes('PERNO M6') && l.includes('84.7%')),
   stampsRequired: 4,
+  mechanic: 'machine' as const,
 };
 
 export default level9;
