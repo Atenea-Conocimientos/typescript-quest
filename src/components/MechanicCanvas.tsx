@@ -27,7 +27,8 @@ interface MechanicProps {
 
 // ─── Shared components ─────────────────────────────────────────────────────────
 function StampDots({ required, count }: { required: number; count: number }) {
-  if (required === 0) return null;
+  // Only show dots when there are multiple stamps to collect (not for single-success mechanics)
+  if (required <= 1) return null;
   return (
     <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
       {Array.from({ length: required }, (_, i) => (
@@ -159,18 +160,32 @@ function TanksMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPro
 
 // ─── ASSEMBLER (p1-l3: template literals) ─────────────────────────────────────
 function AssemblerMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
-  const [loading, setLoading]     = useState(false);
-  const [assembled, setAssembled] = useState<string | null>(null);
-  const [animating, setAnimating] = useState(false);
-  const [success, setSuccess]     = useState<boolean | null>(null);
+  const [loading, setLoading]       = useState(false);
+  const [assembled, setAssembled]   = useState<string | null>(null);
+  const [merging, setMerging]       = useState(false);
+  const [done, setDone]             = useState(false);
+  const [nombreVal, setNombreVal]   = useState<string | null>(null);
+  const [velocidadVal, setVelocidadVal] = useState<string | null>(null);
+  const [success, setSuccess]       = useState<boolean | null>(null);
 
   async function run() {
-    setLoading(true); setAssembled(null); setAnimating(false);
+    setLoading(true);
+    setAssembled(null); setMerging(false); setDone(false);
+    setNombreVal(null); setVelocidadVal(null);
     const { output, success: ok } = await onActivate();
     setSuccess(ok);
     if (ok && output[0]) {
-      setAnimating(true);
-      setTimeout(() => { setAssembled(output[0]); setAnimating(false); }, 700);
+      const line = output[0];
+      // Parse "Robot: Olympus | Velocidad: 100" → extract nombre and velocidad
+      const nombreMatch    = line.match(/Robot:\s*([^|]+)\s*\|/);
+      const velocidadMatch = line.match(/Velocidad:\s*(.+)$/);
+      const parsedNombre    = nombreMatch    ? nombreMatch[1].trim()    : '???';
+      const parsedVelocidad = velocidadMatch ? velocidadMatch[1].trim() : '???';
+      setNombreVal(parsedNombre);
+      setVelocidadVal(parsedVelocidad);
+      // Brief pause to show the pieces, then animate merge
+      setTimeout(() => setMerging(true), 400);
+      setTimeout(() => { setAssembled(line); setMerging(false); setDone(true); }, 1100);
     }
     setLoading(false);
   }
@@ -184,37 +199,62 @@ function AssemblerMechanic({ stampsRequired, stampedCount, onActivate }: Mechani
       </div>
     </>}>
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-        {/* Parts */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ padding: '10px 16px', border: `2px solid ${C.cyan}`, borderRadius: 8,
-            background: C.bgSec, fontFamily: 'monospace', color: C.cyanL,
-            transform: animating ? 'translateX(36px)' : 'translateX(0)', transition: 'transform 0.6s ease' }}>
+        alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+
+        {/* Piece A (nombre) + Piece B (velocidad) → animate toward center */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+          justifyContent: 'center', position: 'relative' }}>
+          {/* Pieza A */}
+          <div style={{ padding: '10px 16px', border: `2px solid ${nombreVal ? C.cyan : C.border}`,
+            borderRadius: 8, background: C.bgSec, fontFamily: 'monospace',
+            color: nombreVal ? C.cyanL : C.textSec,
+            transition: 'all 0.4s',
+            transform: merging ? 'translateX(48px) scale(0.9)' : 'translateX(0) scale(1)',
+            opacity: done ? 0 : 1 }}>
             <div style={{ fontSize: 9, color: C.textSec, marginBottom: 3 }}>const nombre</div>
-            "Olympus"
+            <div style={{ fontSize: 15, fontWeight: 700 }}>
+              {nombreVal ? `"${nombreVal}"` : '???'}
+            </div>
           </div>
-          <div style={{ fontSize: 20, color: C.textSec, opacity: animating ? 0 : 1, transition: 'opacity 0.3s' }}>+</div>
-          <div style={{ padding: '10px 16px', border: `2px solid ${C.amber}`, borderRadius: 8,
-            background: C.bgSec, fontFamily: 'monospace', color: C.amber,
-            transform: animating ? 'translateX(-36px)' : 'translateX(0)', transition: 'transform 0.6s ease' }}>
+          {/* Operador + */}
+          <div style={{ fontSize: 20, color: C.textSec,
+            opacity: merging || done ? 0 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}>+</div>
+          {/* Pieza B */}
+          <div style={{ padding: '10px 16px', border: `2px solid ${velocidadVal ? C.amber : C.border}`,
+            borderRadius: 8, background: C.bgSec, fontFamily: 'monospace',
+            color: velocidadVal ? C.amber : C.textSec,
+            transition: 'all 0.4s',
+            transform: merging ? 'translateX(-48px) scale(0.9)' : 'translateX(0) scale(1)',
+            opacity: done ? 0 : 1 }}>
             <div style={{ fontSize: 9, color: C.textSec, marginBottom: 3 }}>const velocidad</div>
-            100
+            <div style={{ fontSize: 15, fontWeight: 700 }}>
+              {velocidadVal ?? '???'}
+            </div>
           </div>
         </div>
-        <div style={{ fontSize: 20, color: assembled ? C.green : C.textSec, transition: 'color 0.3s' }}>⬇️</div>
+
+        {/* Arrow down */}
+        <div style={{ fontSize: 22, color: assembled ? C.green : C.textSec,
+          transition: 'color 0.5s', marginTop: -4 }}>⬇️</div>
+
         {/* Result */}
-        <div style={{ padding: '14px 24px', border: `2px solid ${assembled ? C.green : C.border}`,
+        <div style={{ padding: '14px 24px',
+          border: `2px solid ${assembled ? C.green : C.border}`,
           borderRadius: 10, background: assembled ? `${C.green}15` : C.bgSec,
-          fontFamily: 'monospace', fontSize: 14, color: assembled ? C.green : C.textSec,
-          minWidth: 260, textAlign: 'center', transition: 'all 0.4s',
-          opacity: assembled ? 1 : 0.5, transform: assembled ? 'scale(1.02)' : 'scale(0.98)' }}>
+          fontFamily: 'monospace', fontSize: 13, color: assembled ? C.green : C.textSec,
+          minWidth: 280, textAlign: 'center', transition: 'all 0.5s',
+          opacity: assembled ? 1 : 0.45,
+          transform: assembled ? 'scale(1.03)' : 'scale(0.97)',
+          boxShadow: assembled ? `0 0 18px ${C.green}30` : 'none' }}>
           {assembled ? (
             <>
-              <div style={{ fontSize: 9, color: C.textSec, marginBottom: 6 }}>ETIQUETA ENSAMBLADA</div>
-              "{assembled}"
+              <div style={{ fontSize: 9, color: C.textSec, marginBottom: 6 }}>✅ ETIQUETA ENSAMBLADA</div>
+              <span style={{ color: C.green }}>"{assembled}"</span>
             </>
           ) : (
-            <span>{animating ? '⚙️ Ensamblando...' : '`Robot: ${nombre} | Velocidad: ${velocidad}`'}</span>
+            <span style={{ opacity: 0.6 }}>
+              {merging ? '⚙️ Ensamblando...' : '`Robot: ${nombre} | Velocidad: ${velocidad}`'}
+            </span>
           )}
         </div>
       </div>
