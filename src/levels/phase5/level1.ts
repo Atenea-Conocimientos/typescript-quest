@@ -4,11 +4,19 @@ const level13: Level = {
   id: 'p5-l1',
   phase: 5,
   title: 'Transformador de Lotes',
-  objective: 'Completar el pipeline: filter (aprobados con peso > 3) + reduce (suma de pesos). Resultado esperado: 2 productos, 9g total',
+  objective: 'Usá filter y reduce para extraer los productos aprobados con peso > 3g y calcular su peso total. Resultado esperado: 2 productos, 9g.',
   concept: 'map · filter · reduce · arrow functions',
   mentor: 'artemisa',
-  hint: 'filter recibe una función que devuelve true/false por elemento. reduce acumula: (acc, p) => acc + p.peso, empieza en 0. Podés encadenarlos: array.filter(...).reduce(...). Las arrow functions son: (param) => expresión.',
-  starterCode: `// lotes.ts — Pipeline de procesamiento de materiales
+  hint: 'filter recibe una arrow function que devuelve true/false: array.filter(p => condición). reduce acumula un valor: array.reduce((acc, p) => acc + p.peso, 0). Podés encadenarlos directamente.',
+  starterCode: `// pipeline.ts — Pipeline de procesamiento de materiales
+// 🎯 Objetivo: filter + reduce sobre el lote de productos
+//
+//    1. Filtrá: solo aprobados con peso > 3
+//    2. Sumá el peso total de los filtrados con reduce
+//    3. Imprimí: "Productos filtrados: 2"
+//               "Peso total del lote: 9g"
+//    Bonus: encontrá el primero sin proveedor e imprimí:
+//               "Sin proveedor: [nombre]"
 
 interface Producto {
   nombre: string
@@ -25,18 +33,8 @@ const lote: Producto[] = [
   { nombre: "Remache",   peso: 2,   aprobado: false },
 ]
 
-// 1. Filtrá: aprobados con peso > 3 (completá la condición):
-const filtrados = lote.filter(p => ???)
-
-// 2. Sumá el peso total de los filtrados (completá el reduce):
-const pesoTotal = filtrados.reduce((acc, p) => ???, 0)
-
-console.log(\`Productos filtrados: \${filtrados.length}\`)
-console.log(\`Peso total del lote: \${pesoTotal}g\`)
-
-// Bonus: encontrá el primero sin proveedor
-const sinProv = lote.find(p => !p.proveedor)
-console.log(\`Sin proveedor: \${sinProv?.nombre ?? "ninguno"}\`)`,
+// Tu código acá 👇
+`,
   solution: `interface Producto {
   nombre: string
   peso: number
