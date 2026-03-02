@@ -170,6 +170,7 @@ export default function GameScreen() {
               key={currentLevelId}
               starterCode={level.starterCode}
               codeHints={level.codeHints}
+              solution={level.solution}
               onResult={(r) => handleResult(r)}
               onCodeChange={(code) => { currentCodeRef.current = code; }}
             />

@@ -8,6 +8,7 @@ interface EditorPanelProps {
   onResult: (result: RunResult, code: string) => void;
   onCodeChange?: (code: string) => void;
   codeHints?: string[];
+  solution?: string;
 }
 
 export default function EditorPanel({
@@ -15,6 +16,7 @@ export default function EditorPanel({
   onResult,
   onCodeChange,
   codeHints,
+  solution,
 }: EditorPanelProps) {
   const [code,           setCode]           = useState(starterCode);
   const [running,        setRunning]        = useState(false);
@@ -43,6 +45,13 @@ export default function EditorPanel({
   function handleReset() {
     setCode(starterCode);
     onCodeChange?.(starterCode);
+    setResult(null);
+  }
+
+  function handleLoadSolution() {
+    if (!solution) return;
+    setCode(solution);
+    onCodeChange?.(solution);
     setResult(null);
   }
 
@@ -85,6 +94,24 @@ export default function EditorPanel({
             <span>
               {allRevealed ? `${totalHints}/${totalHints}` : `? ${hintsRevealed}/${totalHints}`}
             </span>
+          </button>
+        )}
+
+        {/* Solution button — for debugging / unblocking */}
+        {solution && (
+          <button
+            onClick={handleLoadSolution}
+            title="Cargar la solución en el editor"
+            style={{
+              padding: '5px 10px', fontSize: 11, fontWeight: 700,
+              background: 'transparent',
+              border: '1px solid #f59e0b88',
+              borderRadius: 6, color: '#f59e0b',
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}
+          >
+            🔑 Solución
           </button>
         )}
 

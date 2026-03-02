@@ -851,7 +851,8 @@ function GridMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProp
     if (ok && steps.length > 0) {
       let i = 0;
       const t = setInterval(() => {
-        if (steps[i]) setLit(prev => new Set([...prev, steps[i].fila * 4 + steps[i].col]));
+        const step = steps[i];
+        if (step) setLit(prev => new Set([...prev, step.fila * 4 + step.col]));
         i++;
         if (i >= steps.length) { clearInterval(t); setTimeout(() => setDone(true), 300); }
       }, 170);
