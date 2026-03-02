@@ -6,10 +6,16 @@ import { RunResult } from '../engine/types';
 interface EditorPanelProps {
   starterCode: string;
   onResult: (result: RunResult, code: string) => void;
+  onCodeChange?: (code: string) => void;
 }
 
-export default function EditorPanel({ starterCode, onResult }: EditorPanelProps) {
+export default function EditorPanel({ starterCode, onResult, onCodeChange }: EditorPanelProps) {
   const [code, setCode] = useState(starterCode);
+
+  function handleCodeChange(newCode: string) {
+    setCode(newCode);
+    onCodeChange?.(newCode);
+  }
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
 
@@ -24,6 +30,7 @@ export default function EditorPanel({ starterCode, onResult }: EditorPanelProps)
 
   function handleReset() {
     setCode(starterCode);
+    onCodeChange?.(starterCode);
     setResult(null);
   }
 
@@ -61,7 +68,7 @@ export default function EditorPanel({ starterCode, onResult }: EditorPanelProps)
 
       {/* Editor */}
       <div style={{ flex: 1, minHeight: 0 }}>
-        <CodeEditor value={code} onChange={setCode} />
+        <CodeEditor value={code} onChange={handleCodeChange} />
       </div>
 
       {/* Output Panel */}

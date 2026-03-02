@@ -19,6 +19,7 @@ export interface Level {
   starterCode: string;
   solution: string;
   validate: (output: string[]) => boolean;
+  stampsRequired?: number; // If set, user must stamp this many boxes to complete the level
 }
 
 export interface GameState {

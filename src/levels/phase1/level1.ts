@@ -12,6 +12,7 @@ const level1: Level = {
 console.log("???")`,
   solution: `console.log("BOLT READY")`,
   validate: (output: string[]) => output.some((line) => line.includes('BOLT READY')),
+  stampsRequired: 5,
 };
 
 export default level1;

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import EditorPanel from '../editor/EditorPanel';
 import Mentor from '../mentors/Mentor';
 import { LEVELS_BY_ID, INITIAL_LEVEL_ID, ALL_LEVELS } from '../levels';
 import { RunResult } from '../engine/types';
+import { runCode } from '../engine/GameEngine';
 import FactoryCanvas from './FactoryCanvas';
 
 export default function GameScreen() {
@@ -10,65 +11,87 @@ export default function GameScreen() {
   const [completedLevels, setCompletedLevels] = useState<Set<string>>(new Set());
   const [lastResult, setLastResult] = useState<RunResult | null>(null);
   const [successState, setSuccessState] = useState(false);
+  const [stampedCount, setStampedCount] = useState(0);
+
+  // Track current code for box-click runs (initialized to starter code)
+  const currentCodeRef = useRef<string>(LEVELS_BY_ID[INITIAL_LEVEL_ID]?.starterCode ?? '');
 
   const level = LEVELS_BY_ID[currentLevelId];
+  const stampsRequired = level.stampsRequired ?? 0;
 
   function handleResult(result: RunResult) {
     setLastResult(result);
-    if (result.success && level.validate(result.output)) {
-      setSuccessState(true);
-      setCompletedLevels((prev) => new Set([...prev, currentLevelId]));
-    } else {
-      setSuccessState(false);
+    // For levels without stamp mechanic, validate immediately
+    if (stampsRequired === 0) {
+      if (result.success && level.validate(result.output)) {
+        setSuccessState(true);
+        setCompletedLevels((prev) => new Set([...prev, currentLevelId]));
+      } else {
+        setSuccessState(false);
+      }
     }
   }
+
+  // Box click: run current code, validate, increment stamp → returns true if stamped
+  const handleBoxClick = useCallback(async (): Promise<boolean> => {
+    const code = currentCodeRef.current;
+    const result = await runCode(code);
+    setLastResult(result);
+
+    if (result.success && level.validate(result.output)) {
+      setStampedCount((prev) => {
+        const next = prev + 1;
+        if (next >= stampsRequired) {
+          setSuccessState(true);
+          setCompletedLevels((c) => new Set([...c, currentLevelId]));
+        }
+        return next;
+      });
+      return true;
+    }
+    return false;
+  }, [level, stampsRequired, currentLevelId]);
 
   function handleNextLevel() {
     const currentIndex = ALL_LEVELS.findIndex((l) => l.id === currentLevelId);
     if (currentIndex < ALL_LEVELS.length - 1) {
-      setCurrentLevelId(ALL_LEVELS[currentIndex + 1].id);
+      const nextLevel = ALL_LEVELS[currentIndex + 1];
+      setCurrentLevelId(nextLevel.id);
       setSuccessState(false);
       setLastResult(null);
+      setStampedCount(0);
+      currentCodeRef.current = nextLevel.starterCode ?? '';
     }
   }
 
+  function handleLevelChange(levelId: string) {
+    const l = LEVELS_BY_ID[levelId];
+    setCurrentLevelId(levelId);
+    setSuccessState(false);
+    setLastResult(null);
+    setStampedCount(0);
+    currentCodeRef.current = l?.starterCode ?? '';
+  }
+
   return (
-    /* Full-screen centering wrapper */
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      background: 'var(--bg-primary)',
-      padding: 16,
-      boxSizing: 'border-box',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100vh', background: 'var(--bg-primary)', padding: 16, boxSizing: 'border-box',
     }}>
-      {/* Centered canvas-style game panel */}
       <div style={{
-        display: 'flex',
-        width: '100%',
-        maxWidth: 1280,
-        height: 'min(92vh, 800px)',
-        background: 'var(--bg-secondary)',
-        border: '1px solid var(--border)',
-        borderRadius: 16,
-        overflow: 'hidden',
-        boxShadow: '0 8px 48px rgba(0,0,0,0.4)',
+        display: 'flex', width: '100%', maxWidth: 1280, height: 'min(92vh, 800px)',
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.4)',
       }}>
         {/* Left: Level info + Editor */}
         <div style={{
-          width: '44%',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRight: '1px solid var(--border)',
-          minWidth: 0,
+          width: '44%', display: 'flex', flexDirection: 'column',
+          borderRight: '1px solid var(--border)', minWidth: 0,
         }}>
           {/* Level Header */}
           <div style={{
-            padding: '12px 14px',
-            background: 'var(--bg-tertiary)',
-            borderBottom: '1px solid var(--border)',
-            flexShrink: 0,
+            padding: '12px 14px', background: 'var(--bg-tertiary)',
+            borderBottom: '1px solid var(--border)', flexShrink: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
               <span style={{
@@ -86,6 +109,11 @@ export default function GameScreen() {
             <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
               🎯 <strong>Goal:</strong> {level.objective}
             </p>
+            {stampsRequired > 0 && (
+              <p style={{ fontSize: 11, color: 'var(--cyan-light)', margin: '6px 0 0', lineHeight: 1.4 }}>
+                📦 Click each box on the right to stamp it with your code. Stamp all {stampsRequired} to complete!
+              </p>
+            )}
           </div>
 
           {/* Mentor hint */}
@@ -98,7 +126,8 @@ export default function GameScreen() {
             <EditorPanel
               key={currentLevelId}
               starterCode={level.starterCode}
-              onResult={handleResult}
+              onResult={(r) => handleResult(r)}
+              onCodeChange={(code) => { currentCodeRef.current = code; }}
             />
           </div>
         </div>
@@ -107,23 +136,17 @@ export default function GameScreen() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* HUD */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 12px',
-            background: 'var(--bg-tertiary)',
-            borderBottom: '1px solid var(--border)',
-            flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+            background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border)', flexShrink: 0,
           }}>
             <span style={{ fontSize: 11, color: 'var(--text-secondary)', marginRight: 4 }}>
               🏭 <strong style={{ color: 'var(--text-primary)' }}>Olympus Factory</strong>
             </span>
             <div style={{ flex: 1 }} />
-            {/* Level navigator */}
             {ALL_LEVELS.map((l, i) => (
               <button
                 key={l.id}
-                onClick={() => { setCurrentLevelId(l.id); setSuccessState(false); setLastResult(null); }}
+                onClick={() => handleLevelChange(l.id)}
                 title={l.title}
                 style={{
                   width: 26, height: 26, borderRadius: '50%', border: 'none', fontSize: 11,
@@ -143,7 +166,12 @@ export default function GameScreen() {
 
           {/* Factory Canvas */}
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-            <FactoryCanvas isRunning={!!(lastResult?.success)} />
+            <FactoryCanvas
+              isRunning={!!(lastResult?.success)}
+              stampsRequired={stampsRequired}
+              stampedCount={stampedCount}
+              onBoxClick={stampsRequired > 0 ? handleBoxClick : undefined}
+            />
 
             {/* Success Overlay */}
             {successState && (
@@ -155,7 +183,7 @@ export default function GameScreen() {
               }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', marginBottom: 2 }}>
-                    ✅ Objective Complete!
+                    ✅ {stampsRequired > 0 ? `${stampsRequired} Boxes Stamped!` : 'Objective Complete!'}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     The factory is producing {level.title.toLowerCase()} 🔩
@@ -166,8 +194,7 @@ export default function GameScreen() {
                     onClick={handleNextLevel}
                     style={{
                       padding: '7px 16px', background: 'var(--green)', border: 'none',
-                      borderRadius: 8, color: 'white', fontWeight: 600, fontSize: 12,
-                      cursor: 'pointer',
+                      borderRadius: 8, color: 'white', fontWeight: 600, fontSize: 12, cursor: 'pointer',
                     }}
                   >
                     Next Level →
