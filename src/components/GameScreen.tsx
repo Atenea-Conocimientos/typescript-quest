@@ -4,6 +4,7 @@ import Mentor from '../mentors/Mentor';
 import { LEVELS_BY_ID, INITIAL_LEVEL_ID, ALL_LEVELS } from '../levels';
 import { runCode } from '../engine/GameEngine';
 import FactoryCanvas from './FactoryCanvas';
+import DevPanel from './DevPanel';
 
 export default function GameScreen() {
   const [currentLevelId, setCurrentLevelId] = useState(INITIAL_LEVEL_ID);
@@ -199,6 +200,9 @@ export default function GameScreen() {
           </div>
         </div>
       </div>
+
+      {/* Dev panel — only visible when toggled */}
+      <DevPanel level={level} stampedCount={stampedCount} stampsRequired={stampsRequired} />
     </div>
   );
 }
