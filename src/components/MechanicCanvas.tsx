@@ -335,26 +335,145 @@ function ScannerMechanic({ stampsRequired, stampedCount, onActivate }: MechanicP
   );
 }
 
-// ─── SORTER (p2-l2: if/else if/else) ──────────────────────────────────────────
+// ─── SORTER (p2-l2: if/else if/else) — Conveyor Belt with Sorting Arms ────────
 function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
-  const [loading, setLoading]   = useState(false);
-  const [result, setResult]     = useState<'DESPACHO' | 'REPARACION' | 'RESIDUOS' | null>(null);
-  const [animating, setAnimating] = useState(false);
-  const [success, setSuccess]   = useState<boolean | null>(null);
+  type Dest = 'DESPACHO' | 'REPARACION' | 'RESIDUOS';
+  type BoxPhase =
+    | 'idle' | 'start'
+    | 'to-gate1' | 'at-gate1' | 'drop-residuos'
+    | 'past-g1'  | 'to-gate2' | 'at-gate2' | 'drop-reparacion'
+    | 'past-g2'  | 'to-aprobado' | 'done';
 
-  const lanes = [
-    { key: 'DESPACHO'   as const, label: '✅ DESPACHO',    color: C.green, sub: 'calidad ≥ 90' },
-    { key: 'REPARACION' as const, label: '⚠️  REPARACIÓN',  color: C.amber, sub: '70 ≤ calidad < 90' },
-    { key: 'RESIDUOS'   as const, label: '❌ RESIDUOS',    color: C.red,   sub: 'calidad < 70' },
-  ];
+  const [loading,  setLoading]  = useState(false);
+  const [success,  setSuccess]  = useState<boolean | null>(null);
+  const [dest,     setDest]     = useState<Dest | null>(null);
+  const [phase,    setPhase]    = useState<BoxPhase>('idle');
+  const [arm1,     setArm1]     = useState(false);
+  const [arm2,     setArm2]     = useState(false);
+
+  // ── Geometry constants (% of container) ──────────────────────────────────────
+  const BELT_Y  = 44;   // belt vertical center
+  const DROP_Y  = 80;   // destination vertical center
+  const G1_X    = 28;   // gate 1 horizontal center
+  const G2_X    = 60;   // gate 2 horizontal center
+  const END_X   = 86;   // APROBADO horizontal center
+
+  // ── Box pixel position per phase ─────────────────────────────────────────────
+  function boxPos(ph: BoxPhase, d: Dest | null): { left: string; top: string } | null {
+    switch (ph) {
+      case 'idle':           return null;
+      case 'start':          return { left: '8%',          top: `${BELT_Y}%` };
+      case 'to-gate1':       return { left: `${G1_X}%`,    top: `${BELT_Y}%` };
+      case 'at-gate1':       return { left: `${G1_X}%`,    top: `${BELT_Y}%` };
+      case 'drop-residuos':  return { left: `${G1_X}%`,    top: `${DROP_Y}%` };
+      case 'past-g1':        return { left: `${G1_X + 4}%`,top: `${BELT_Y}%` };
+      case 'to-gate2':       return { left: `${G2_X}%`,    top: `${BELT_Y}%` };
+      case 'at-gate2':       return { left: `${G2_X}%`,    top: `${BELT_Y}%` };
+      case 'drop-reparacion':return { left: `${G2_X}%`,    top: `${DROP_Y}%` };
+      case 'past-g2':        return { left: `${G2_X + 4}%`,top: `${BELT_Y}%` };
+      case 'to-aprobado':    return { left: `${END_X}%`,   top: `${BELT_Y}%` };
+      case 'done':
+        if (!d) return null;
+        if (d === 'RESIDUOS')   return { left: `${G1_X}%`, top: `${DROP_Y}%` };
+        if (d === 'REPARACION') return { left: `${G2_X}%`, top: `${DROP_Y}%` };
+        return { left: `${END_X}%`, top: `${BELT_Y}%` };
+    }
+  }
 
   async function run() {
-    setLoading(true); setResult(null); setAnimating(true);
+    setLoading(true);
+    setPhase('idle'); setDest(null); setArm1(false); setArm2(false);
+
     const { output, success: ok } = await onActivate();
     setSuccess(ok);
-    const parsed = parseSorterResult(output);
-    setTimeout(() => { setResult(parsed); setAnimating(false); }, 500);
+
+    if (ok) {
+      const result = parseSorterResult(output);
+      setDest(result);
+      const t = (fn: () => void, ms: number) => setTimeout(fn, ms);
+      setPhase('start');
+
+      if (result === 'RESIDUOS') {
+        t(() => setPhase('to-gate1'),          50);
+        t(() => { setPhase('at-gate1'); setArm1(true); }, 700);
+        t(() => setPhase('drop-residuos'),     1100);
+        t(() => setPhase('done'),              1700);
+      } else if (result === 'REPARACION') {
+        t(() => setPhase('to-gate1'),          50);
+        t(() => setPhase('past-g1'),           700);
+        t(() => setPhase('to-gate2'),          800);
+        t(() => { setPhase('at-gate2'); setArm2(true); }, 1450);
+        t(() => setPhase('drop-reparacion'),   1850);
+        t(() => setPhase('done'),              2450);
+      } else { // DESPACHO
+        t(() => setPhase('to-gate1'),          50);
+        t(() => setPhase('past-g1'),           700);
+        t(() => setPhase('to-gate2'),          800);
+        t(() => setPhase('past-g2'),           1450);
+        t(() => setPhase('to-aprobado'),       1550);
+        t(() => setPhase('done'),              2150);
+      }
+    }
     setLoading(false);
+  }
+
+  const pos = boxPos(phase, dest);
+  const isDone = phase === 'done';
+
+  // ── Gate arm rendering helper ─────────────────────────────────────────────────
+  function Gate({ x, active, color, label }: { x: number; active: boolean; color: string; label: string }) {
+    return (
+      <>
+        {/* Arm shaft */}
+        <div style={{ position: 'absolute', left: `${x}%`, top: active ? '14%' : '26%',
+          transform: 'translateX(-50%)',
+          width: 7, height: active ? `${BELT_Y - 14 + 6}%` : `${BELT_Y - 26 + 6}%`,
+          background: active ? color : C.bgTer,
+          borderRadius: 4, transition: 'all 0.35s ease',
+          boxShadow: active ? `0 0 12px ${color}90` : 'none', zIndex: 2 }} />
+        {/* Gate head */}
+        <div style={{ position: 'absolute', left: `${x}%`, top: '14%',
+          transform: 'translate(-50%, -100%)',
+          width: 38, height: 26, background: active ? `${color}30` : C.bgSec,
+          border: `2px solid ${active ? color : C.border}`, borderRadius: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, transition: 'all 0.3s',
+          boxShadow: active ? `0 0 14px ${color}70` : 'none', zIndex: 2 }}>
+          <span>{active ? (color === C.red ? '🛑' : '🟡') : (color === C.red ? '🔴' : '🟡')}</span>
+        </div>
+        {/* Condition label */}
+        <div style={{ position: 'absolute', left: `${x}%`, top: '2%',
+          transform: 'translateX(-50%)', fontSize: 8, fontFamily: 'monospace',
+          color: active ? color : C.textSec, textAlign: 'center',
+          transition: 'color 0.3s', whiteSpace: 'nowrap', zIndex: 2 }}>
+          {label}
+        </div>
+        {/* Drop line */}
+        <div style={{ position: 'absolute', left: `${x}%`, top: `${BELT_Y + 5}%`,
+          transform: 'translateX(-50%)',
+          width: 2, height: `${DROP_Y - BELT_Y - 8}%`,
+          background: active ? `${color}70` : `${C.border}30`,
+          transition: 'background 0.5s', zIndex: 1 }} />
+      </>
+    );
+  }
+
+  // ── Destination box helper ────────────────────────────────────────────────────
+  function DestZone({ x, isTarget, color, icon, name }: {
+    x: number; isTarget: boolean; color: string; icon: string; name: string;
+  }) {
+    const lit = isTarget && isDone;
+    return (
+      <div style={{ position: 'absolute', left: `${x}%`, top: `${DROP_Y + 5}%`,
+        transform: 'translateX(-50%)', textAlign: 'center',
+        padding: '5px 10px', border: `2px solid ${lit ? color : C.border}`,
+        borderRadius: 8, background: lit ? `${color}20` : C.bgSec,
+        transition: 'all 0.45s', boxShadow: lit ? `0 0 18px ${color}50` : 'none', zIndex: 2 }}>
+        <div style={{ fontSize: 18 }}>{icon}</div>
+        <div style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 700,
+          color: lit ? color : C.textSec, transition: 'color 0.3s', whiteSpace: 'nowrap' }}>{name}</div>
+      </div>
+    );
   }
 
   return (
@@ -365,41 +484,87 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
         <ActionBtn onClick={run} loading={loading} label="📦 CLASIFICAR CAJA" />
       </div>
     </>}>
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* Input box */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: 64, height: 52, border: `2px solid ${animating ? C.amber : C.border}`,
-            borderRadius: 6, background: animating ? `${C.amber}20` : C.bgSec,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 2, transition: 'all 0.3s', boxShadow: animating ? `0 0 14px ${C.amber}40` : 'none' }}>
-            <span style={{ fontSize: 20 }}>📦</span>
-            <span style={{ fontSize: 9, color: C.textSec, fontFamily: 'monospace' }}>calidad: 78</span>
-          </div>
+      <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+
+        {/* ── Belt track ── */}
+        {/* Main rail */}
+        <div style={{ position: 'absolute', top: `${BELT_Y + 1}%`, left: '3%', right: '3%',
+          height: 8, background: C.bgTer, borderRadius: 4,
+          border: `1px solid ${C.border}`, zIndex: 1 }} />
+        {/* Belt stripes (conveyor effect) */}
+        {[0,1,2,3,4,5,6,7,8].map(i => (
+          <div key={i} style={{ position: 'absolute',
+            left: `${4 + i * 11}%`, top: `${BELT_Y + 2}%`,
+            width: '5%', height: 5, background: `${C.bgSec}90`,
+            borderRadius: 1, zIndex: 2 }} />
+        ))}
+
+        {/* ENTRADA label */}
+        <div style={{ position: 'absolute', left: '2%', top: `${BELT_Y - 12}%`,
+          fontSize: 8, color: C.textSec, fontFamily: 'monospace', textAlign: 'center',
+          lineHeight: 1.4 }}>📥<br/>INICIO</div>
+
+        {/* ── Gate 1 — Red (calidad < 70 → DESCARTE) ── */}
+        <Gate x={G1_X} active={arm1} color={C.red}   label="cal < 70" />
+
+        {/* ── Gate 2 — Yellow (70 ≤ calidad < 90 → RETRABAJAR) ── */}
+        <Gate x={G2_X} active={arm2} color={C.amber} label="70 ≤ cal < 90" />
+
+        {/* ── APROBADO end zone ── */}
+        <div style={{ position: 'absolute', left: `${END_X}%`, top: '8%',
+          transform: 'translateX(-50%)', textAlign: 'center',
+          padding: '7px 10px', border: `2px solid ${dest === 'DESPACHO' && isDone ? C.green : C.border}`,
+          borderRadius: 8, background: dest === 'DESPACHO' && isDone ? `${C.green}20` : C.bgSec,
+          transition: 'all 0.5s',
+          boxShadow: dest === 'DESPACHO' && isDone ? `0 0 22px ${C.green}60` : 'none', zIndex: 2 }}>
+          <div style={{ fontSize: 22 }}>✅</div>
+          <div style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 700,
+            color: dest === 'DESPACHO' && isDone ? C.green : C.textSec,
+            transition: 'color 0.3s' }}>APROBADO</div>
+          <div style={{ fontSize: 8, color: C.textSec, fontFamily: 'monospace' }}>cal ≥ 90</div>
         </div>
-        <div style={{ textAlign: 'center', color: C.textSec, fontSize: 18 }}>▼</div>
-        {/* 3 lanes */}
-        <div style={{ flex: 1, display: 'flex', gap: 10 }}>
-          {lanes.map((lane) => {
-            const active = result === lane.key;
-            return (
-              <div key={lane.key} style={{ flex: 1, border: `2px solid ${active ? lane.color : C.border}`,
-                borderRadius: 10, background: active ? lane.color + '15' : C.bgSec,
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 8, padding: '10px 6px',
-                transition: 'all 0.4s', boxShadow: active ? `0 0 18px ${lane.color}40` : 'none',
-                transform: active ? 'scale(1.04)' : 'scale(1)' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: active ? lane.color : C.textSec,
-                  fontFamily: 'monospace', textAlign: 'center', transition: 'color 0.3s' }}>
-                  {lane.label}
-                </div>
-                <div style={{ fontSize: 10, color: C.textSec, fontFamily: 'monospace', textAlign: 'center' }}>
-                  {lane.sub}
-                </div>
-                {active && <span style={{ fontSize: 22 }}>📦</span>}
-              </div>
-            );
-          })}
-        </div>
+
+        {/* ── Destinations below gates ── */}
+        <DestZone x={G1_X} isTarget={dest === 'RESIDUOS'}   color={C.red}   icon="❌" name="DESCARTE" />
+        <DestZone x={G2_X} isTarget={dest === 'REPARACION'} color={C.amber} icon="⚠️" name="RETRABAJAR" />
+
+        {/* ── Moving box ── */}
+        {pos && (
+          <div style={{
+            position: 'absolute', left: pos.left, top: pos.top,
+            transform: 'translate(-50%, -50%)',
+            transition: 'left 0.6s cubic-bezier(0.4,0,0.2,1), top 0.4s ease',
+            zIndex: 10, width: 36, height: 36,
+            background: `linear-gradient(135deg, ${C.amber}dd, ${C.amber}88)`,
+            border: `2px solid ${C.amber}`, borderRadius: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, boxShadow: `0 3px 10px ${C.amber}50`,
+          }}>📦</div>
+        )}
+
+        {/* ── Box at final destination (glows) ── */}
+        {isDone && dest && (() => {
+          const destPos = boxPos('done', dest)!;
+          const col = dest === 'RESIDUOS' ? C.red : dest === 'REPARACION' ? C.amber : C.green;
+          return (
+            <div style={{
+              position: 'absolute', left: destPos.left, top: destPos.top,
+              transform: 'translate(-50%, -50%)', zIndex: 11,
+              width: 36, height: 36, background: `${col}30`,
+              border: `2px solid ${col}`, borderRadius: 6,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+              boxShadow: `0 0 20px ${col}60`,
+              animation: 'boxPulse 1.2s ease-in-out infinite',
+            }}>📦</div>
+          );
+        })()}
+
+        <style>{`
+          @keyframes boxPulse {
+            0%,100% { transform: translate(-50%,-50%) scale(1); }
+            50%      { transform: translate(-50%,-50%) scale(1.12); }
+          }
+        `}</style>
       </div>
     </MechanicWrapper>
   );
