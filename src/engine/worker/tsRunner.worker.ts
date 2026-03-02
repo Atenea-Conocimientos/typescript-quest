@@ -1,10 +1,10 @@
-import * as esbuild from 'esbuild-wasm';
+import { initialize, transform } from 'esbuild-wasm';
 
 let initialized = false;
 
 async function ensureInitialized() {
   if (!initialized) {
-    await esbuild.initialize({
+    await initialize({
       wasmURL: 'https://unpkg.com/esbuild-wasm@0.24.2/esbuild.wasm',
       worker: false,
     });
@@ -21,7 +21,7 @@ self.onmessage = async (event: MessageEvent<{ code: string; id: string }>) => {
     await ensureInitialized();
 
     // Compile TypeScript to JavaScript (throws on syntax error)
-    const result = await esbuild.transform(code, {
+    const result = await transform(code, {
       loader: 'ts',
       target: 'es2020',
       format: 'esm',
