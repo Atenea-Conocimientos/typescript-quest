@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LevelMechanic } from '../engine/types';
 import {
   parseEnergySteps,
@@ -342,7 +342,6 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
                   'past-g2' | 'to-end' | 'drop-residuos' | 'done';
   type CPData   = { gate: 1 | 2; calidad: number; dest: Dest };
 
-  // ── Batch of 5 boxes, quality values chosen to cover all 3 outcomes ──────────
   const BATCH = [
     { id: 1, calidad: 95 }, // DESPACHO
     { id: 2, calidad: 78 }, // REPARACION
@@ -359,27 +358,36 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
   function qualColor(cal: number) {
     return cal >= 90 ? C.green : cal >= 70 ? C.amber : C.red;
   }
+  const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
-  const [loading,      setLoading]      = useState(false);
-  const [success,      setSuccess]      = useState<boolean | null>(null);
-  const [batchDone,    setBatchDone]    = useState(false);
-  // per-box tracking
-  const [bStatuses,    setBStatuses]    = useState<Array<'waiting'|'on-belt'|'done'>>(BATCH.map(() => 'waiting'));
-  const [bDests,       setBDests]       = useState<Array<Dest|null>>(BATCH.map(() => null));
-  // active box on belt
-  const [activeIdx,    setActiveIdx]    = useState<number | null>(null);
-  const [boxPhase,     setBoxPhase]     = useState<BoxPhase>('idle');
-  // gate arms (gate1=green catches ≥90, gate2=yellow catches ≥70<90, end catches rest)
-  const [arm1,         setArm1]         = useState(false);
-  const [arm2,         setArm2]         = useState(false);
-  // checkpoint popup
-  const [checkpoint,   setCheckpoint]   = useState<CPData | null>(null);
+  const [loading,    setLoading]    = useState(false);
+  const [success,    setSuccess]    = useState<boolean | null>(null);
+  const [batchDone,  setBatchDone]  = useState(false);
+  const [bStatuses,  setBStatuses]  = useState<Array<'waiting'|'on-belt'|'done'>>(BATCH.map(() => 'waiting'));
+  const [bDests,     setBDests]     = useState<Array<Dest|null>>(BATCH.map(() => null));
+  const [activeIdx,  setActiveIdx]  = useState<number | null>(null);
+  const [boxPhase,   setBoxPhase]   = useState<BoxPhase>('idle');
+  const [arm1,       setArm1]       = useState(false);
+  const [arm2,       setArm2]       = useState(false);
+  const [checkpoint, setCheckpoint] = useState<CPData | null>(null);
 
-  // Geometry (% of container height/width)
+  // ── Step control: animation pauses until user clicks "Siguiente" ─────────────
+  const resolveRef  = useRef<(() => void) | null>(null);
+  const cancelledRef = useRef(false);
+
+  function waitForNext(): Promise<void> {
+    return new Promise(resolve => { resolveRef.current = resolve; });
+  }
+  function handleNext() {
+    resolveRef.current?.();
+    resolveRef.current = null;
+    setCheckpoint(null);
+  }
+
+  // Geometry
   const BELT_Y = 46, DROP_Y = 84;
   const G1_X = 28, G2_X = 58, END_X = 84;
 
-  // Box position lookup
   function bPos(ph: BoxPhase): { left: string; top: string } | null {
     switch (ph) {
       case 'start':          return { left: '7%',          top: `${BELT_Y}%` };
@@ -400,7 +408,14 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
   const updDest = (i: number, d: Dest) =>
     setBDests(prev => { const n=[...prev]; n[i]=d; return n; });
 
+  // ── Main run — fully async, pauses at each checkpoint ────────────────────────
   async function run() {
+    // Cancel any in-progress run
+    cancelledRef.current = true;
+    resolveRef.current?.();
+    await delay(50);
+    cancelledRef.current = false;
+
     setLoading(true);
     setBStatuses(BATCH.map(() => 'waiting'));
     setBDests(BATCH.map(() => null));
@@ -412,52 +427,76 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
     setSuccess(ok);
 
     if (ok) {
-      let cursor = 150; // running ms offset
-      const t = (fn: () => void, offset: number) => setTimeout(fn, cursor + offset);
-
-      BATCH.forEach((box, i) => {
+      for (let i = 0; i < BATCH.length; i++) {
+        if (cancelledRef.current) break;
+        const box  = BATCH[i];
         const dest = getDest(box.calidad);
 
-        // ── Box enters belt ───────────────────────────────────────────────────
-        t(() => { setActiveIdx(i); setBoxPhase('start'); updStat(i, 'on-belt'); }, 0);
-        t(() => setBoxPhase('to-g1'), 50);
+        // ── Box enters belt ─────────────────────────────────────────────────
+        setActiveIdx(i);
+        setBoxPhase('start');
+        updStat(i, 'on-belt');
+        await delay(60);
+        setBoxPhase('to-g1');
+        await delay(550);                       // box travels to gate 1
+        if (cancelledRef.current) break;
+
+        // ── Checkpoint: Gate 1 (if calidad >= 90) ──────────────────────────
+        setCheckpoint({ gate: 1, calidad: box.calidad, dest });
+        await waitForNext();                    // ← PAUSES: user clicks Siguiente
+        if (cancelledRef.current) break;
 
         if (dest === 'DESPACHO') {
-          // Gate 1 catches it (calidad >= 90)
-          t(() => { setArm1(true); setCheckpoint({ gate: 1, calidad: box.calidad, dest }); }, 500);
-          t(() => setBoxPhase('drop-despacho'),                                               900);
-          t(() => { setCheckpoint(null); },                                                   950);
-          t(() => { setBoxPhase('done'); updStat(i, 'done'); updDest(i, dest); },            1400);
-          t(() => setArm1(false),                                                            1550);
-          cursor += 1750;
-
-        } else if (dest === 'REPARACION') {
-          // Gate 1 passes, checkpoint, gate 2 catches (70 ≤ cal < 90)
-          t(() => setCheckpoint({ gate: 1, calidad: box.calidad, dest }),                    500);
-          t(() => { setBoxPhase('past-g1'); setCheckpoint(null); },                          950);
-          t(() => setBoxPhase('to-g2'),                                                     1050);
-          t(() => { setArm2(true); setCheckpoint({ gate: 2, calidad: box.calidad, dest }); },1550);
-          t(() => setBoxPhase('drop-reparacion'),                                            1950);
-          t(() => { setCheckpoint(null); },                                                  2000);
-          t(() => { setBoxPhase('done'); updStat(i, 'done'); updDest(i, dest); },            2500);
-          t(() => setArm2(false),                                                            2650);
-          cursor += 2850;
+          // Arm 1 fires → box drops to APROBADO
+          setArm1(true);
+          await delay(350);
+          setBoxPhase('drop-despacho');
+          await delay(500);
+          setBoxPhase('done');
+          updStat(i, 'done'); updDest(i, dest);
+          await delay(450);
+          setArm1(false);
 
         } else {
-          // RESIDUOS: passes both gates, drops at end
-          t(() => setCheckpoint({ gate: 1, calidad: box.calidad, dest }),                    500);
-          t(() => { setBoxPhase('past-g1'); setCheckpoint(null); },                          950);
-          t(() => setBoxPhase('to-g2'),                                                     1050);
-          t(() => setCheckpoint({ gate: 2, calidad: box.calidad, dest }),                   1550);
-          t(() => { setBoxPhase('past-g2'); setCheckpoint(null); },                         2000);
-          t(() => setBoxPhase('to-end'),                                                    2100);
-          t(() => setBoxPhase('drop-residuos'),                                             2600);
-          t(() => { setBoxPhase('done'); updStat(i, 'done'); updDest(i, dest); },            3100);
-          cursor += 3400;
-        }
-      });
+          // Box passes gate 1 → moves to gate 2
+          setBoxPhase('past-g1');
+          await delay(120);
+          setBoxPhase('to-g2');
+          await delay(550);                     // travels to gate 2
+          if (cancelledRef.current) break;
 
-      setTimeout(() => setBatchDone(true), cursor + 200);
+          // ── Checkpoint: Gate 2 (else if calidad >= 70) ─────────────────
+          setCheckpoint({ gate: 2, calidad: box.calidad, dest });
+          await waitForNext();                  // ← PAUSES: user clicks Siguiente
+          if (cancelledRef.current) break;
+
+          if (dest === 'REPARACION') {
+            setArm2(true);
+            await delay(350);
+            setBoxPhase('drop-reparacion');
+            await delay(500);
+            setBoxPhase('done');
+            updStat(i, 'done'); updDest(i, dest);
+            await delay(450);
+            setArm2(false);
+
+          } else {
+            // RESIDUOS: passes both gates → falls off end
+            setBoxPhase('past-g2');
+            await delay(120);
+            setBoxPhase('to-end');
+            await delay(500);
+            setBoxPhase('drop-residuos');
+            await delay(500);
+            setBoxPhase('done');
+            updStat(i, 'done'); updDest(i, dest);
+            await delay(400);
+          }
+        }
+        await delay(250);                       // small gap before next box
+      }
+
+      if (!cancelledRef.current) setBatchDone(true);
     }
     setLoading(false);
   }
@@ -467,76 +506,102 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
   const pos        = bPos(boxPhase);
   const boxColor   = activeBox ? qualColor(activeBox.calidad) : C.amber;
 
-  // ── Checkpoint popup ─────────────────────────────────────────────────────────
+  // ── Checkpoint popup (with Siguiente button) ─────────────────────────────────
   function CheckpointPopup({ cp }: { cp: CPData }) {
-    // Gate 1 (green): checks calidad >= 90 → if true, DESPACHO; else passes
-    // Gate 2 (yellow): checks calidad >= 70 → if true, REPARACION; else falls through
-    const isG1     = cp.gate === 1;
-    const cond     = isG1 ? 'calidad >= 90' : 'calidad >= 70';
+    const isG1      = cp.gate === 1;
     const condColor = isG1 ? C.green : C.amber;
-    const result   = isG1 ? cp.calidad >= 90 : cp.calidad >= 70;
-    const nextMsg  = isG1
-      ? (result ? '✅ ¡Tomado! → APROBADO' : '→ Sigue a brazo 2...')
-      : (result ? '⚠️ ¡Tomado! → RETRABAJAR' : '→ Sin match → DESCARTE');
+    const result    = isG1 ? cp.calidad >= 90 : cp.calidad >= 70;
+    const cond      = isG1 ? 'calidad >= 90' : 'calidad >= 70';
+    const keyword   = isG1 ? 'if' : 'else if';
+    const nextMsg   = isG1
+      ? (result ? '✅ ¡Condición verdadera! → se dirige a APROBADO' : '❌ Condición falsa → sigue al brazo 2')
+      : (result ? '⚠️ ¡Condición verdadera! → se dirige a RETRABAJAR' : '❌ Condición falsa → cae a DESCARTE');
 
-    // Position popup to the right of the gate, or left if near right edge
-    const leftPct = isG1 ? G1_X + 8 : G2_X < 55 ? G2_X + 8 : G2_X - 34;
+    const leftPct = isG1 ? G1_X + 9 : G2_X + 8;
 
     return (
       <div style={{
-        position: 'absolute', left: `${leftPct}%`, top: '6%',
-        zIndex: 30, minWidth: 170, maxWidth: 210,
+        position: 'absolute', left: `${leftPct}%`, top: '5%',
+        zIndex: 30, minWidth: 190, maxWidth: 230,
         background: C.bgSec, border: `2px solid ${condColor}`,
-        borderRadius: 10, padding: '9px 13px',
-        boxShadow: `0 6px 24px ${condColor}40`,
+        borderRadius: 12, padding: '12px 15px',
+        boxShadow: `0 8px 28px rgba(0,0,0,0.5), 0 0 0 1px ${condColor}40`,
         fontFamily: 'monospace', fontSize: 11,
-        animation: 'cpSlide 0.2s ease',
+        animation: 'cpSlide 0.18s ease',
       }}>
-        <div style={{ fontWeight: 700, color: condColor, marginBottom: 5, fontSize: 12 }}>
-          {isG1 ? '🟢 Brazo 1 (if)' : '🟡 Brazo 2 (else if)'}
+        {/* Header */}
+        <div style={{ fontWeight: 700, color: condColor, marginBottom: 8, fontSize: 12,
+          display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 14 }}>{isG1 ? '🟢' : '🟡'}</span>
+          Brazo {cp.gate} — <code style={{ background: `${condColor}20`,
+            padding: '1px 5px', borderRadius: 3 }}>{keyword}</code>
         </div>
-        <div style={{ color: C.textSec, fontSize: 10, marginBottom: 3 }}>Condición:</div>
-        <div style={{ color: C.purpleL, marginBottom: 4 }}>
-          {isG1 ? 'if' : 'else if'} ({cond})
+
+        {/* Code being evaluated */}
+        <div style={{ background: C.bgTer, borderRadius: 6, padding: '7px 10px',
+          marginBottom: 8, border: `1px solid ${C.border}` }}>
+          <div style={{ color: C.purpleL, marginBottom: 3 }}>
+            <span style={{ color: C.amber }}>{keyword}</span>
+            {' ('}
+            <span style={{ color: C.cyanL }}>{cond}</span>
+            {')'}
+          </div>
+          <div style={{ color: C.textSec, fontSize: 10 }}>
+            <span style={{ color: C.cyanL }}>{cp.calidad}</span>
+            {' '}{isG1 ? '>= 90' : '>= 70'}
+            {' '}
+            <span style={{ color: C.textSec }}>→</span>
+            {' '}
+            <span style={{ color: result ? C.green : C.red, fontWeight: 700, fontSize: 12 }}>
+              {String(result)}
+            </span>
+          </div>
         </div>
-        <div style={{ color: C.text, marginBottom: 6 }}>
-          <span style={{ color: C.cyanL }}>{cp.calidad}</span>
-          {' '}{isG1 ? '>= 90' : '>= 70'}
-          {' '}→{' '}
-          <span style={{ color: result ? C.green : C.red, fontWeight: 700 }}>
-            {String(result)}
-          </span>
-        </div>
-        <div style={{ fontWeight: 700, color: result ? C.green : (isG1 ? C.amber : C.red) }}>
+
+        {/* Result */}
+        <div style={{ fontSize: 11, color: result ? C.green : C.red,
+          fontWeight: 600, marginBottom: 10, lineHeight: 1.4 }}>
           {nextMsg}
         </div>
+
+        {/* Siguiente button */}
+        <button
+          onClick={handleNext}
+          style={{
+            width: '100%', padding: '8px 0', fontSize: 12, fontWeight: 700,
+            background: `linear-gradient(135deg, ${condColor}cc, ${condColor}88)`,
+            border: `2px solid ${condColor}`, borderRadius: 8, color: 'white',
+            cursor: 'pointer', fontFamily: 'JetBrains Mono, monospace',
+            boxShadow: `0 0 12px ${condColor}50`,
+            transition: 'opacity 0.15s',
+          }}
+          onMouseOver={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseOut={e  => (e.currentTarget.style.opacity = '1')}
+        >
+          Siguiente →
+        </button>
       </div>
     );
   }
 
   // ── Destination zone ─────────────────────────────────────────────────────────
   function DestZone({ x, icon, name, color }: { x: number; icon: string; name: string; color: string }) {
-    const lit = batchDone && bDests.includes(
-      name === 'APROBADO' ? 'DESPACHO' : name === 'RETRABAJAR' ? 'REPARACION' : 'RESIDUOS'
-    );
-    const count = bDests.filter(d =>
-      d === (name === 'APROBADO' ? 'DESPACHO' : name === 'RETRABAJAR' ? 'REPARACION' : 'RESIDUOS')
-    ).length;
+    const destKey = name === 'APROBADO' ? 'DESPACHO' : name === 'RETRABAJAR' ? 'REPARACION' : 'RESIDUOS';
+    const count   = bDests.filter(d => d === destKey).length;
+    const lit     = count > 0;
     return (
       <div style={{
         position: 'absolute', left: `${x}%`, top: `${DROP_Y + 4}%`,
-        transform: 'translateX(-50%)', textAlign: 'center',
-        padding: '5px 10px', minWidth: 70,
-        border: `2px solid ${lit ? color : C.border}`,
+        transform: 'translateX(-50%)', textAlign: 'center', minWidth: 68,
+        padding: '5px 8px', border: `2px solid ${lit ? color : C.border}`,
         borderRadius: 8, background: lit ? `${color}18` : C.bgSec,
-        transition: 'all 0.45s',
-        boxShadow: lit ? `0 0 16px ${color}50` : 'none', zIndex: 2,
+        transition: 'all 0.45s', boxShadow: lit ? `0 0 14px ${color}50` : 'none', zIndex: 2,
       }}>
-        <div style={{ fontSize: 18 }}>{icon}</div>
+        <div style={{ fontSize: 16 }}>{icon}</div>
         <div style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 700,
           color: lit ? color : C.textSec, transition: 'color 0.3s' }}>{name}</div>
         {count > 0 && (
-          <div style={{ fontSize: 10, color, fontWeight: 900, marginTop: 2 }}>×{count}</div>
+          <div style={{ fontSize: 11, color, fontWeight: 900 }}>×{count}</div>
         )}
       </div>
     );
@@ -552,7 +617,7 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
     </>}>
       <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
 
-        {/* ── 5-box queue row ──────────────────────────────────────────────── */}
+        {/* ── 5-box queue ──────────────────────────────────────────────────── */}
         <div style={{ position: 'absolute', top: '1%', left: '2%', right: '2%',
           display: 'flex', gap: 5, alignItems: 'center' }}>
           <div style={{ fontSize: 8, color: C.textSec, fontFamily: 'monospace',
@@ -563,27 +628,22 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
             const qc  = qualColor(box.calidad);
             const dc  = d === 'DESPACHO' ? C.green : d === 'REPARACION' ? C.amber : d === 'RESIDUOS' ? C.red : C.border;
             const isA = activeIdx === i && st === 'on-belt';
-            const isDoneB = st === 'done';
+            const done = st === 'done';
             return (
               <div key={box.id} style={{
-                flex: 1, padding: '4px 6px', borderRadius: 7, textAlign: 'center',
-                border: `2px solid ${isA ? qc : isDoneB ? dc : C.border}`,
-                background: isA ? `${qc}18` : isDoneB ? `${dc}10` : C.bgSec,
-                transition: 'all 0.35s',
+                flex: 1, padding: '4px 5px', borderRadius: 7, textAlign: 'center',
+                border: `2px solid ${isA ? qc : done ? dc : C.border}`,
+                background: isA ? `${qc}18` : done ? `${dc}10` : C.bgSec,
+                transition: 'all 0.35s', opacity: done ? 0.75 : 1,
                 boxShadow: isA ? `0 0 10px ${qc}50` : 'none',
-                opacity: isDoneB ? 0.75 : 1,
               }}>
                 <div style={{ fontSize: 13 }}>
-                  {isDoneB
-                    ? (d === 'DESPACHO' ? '✅' : d === 'REPARACION' ? '⚠️' : '❌')
-                    : isA ? '🚀' : '📦'}
+                  {done ? (d==='DESPACHO'?'✅':d==='REPARACION'?'⚠️':'❌') : isA?'🚀':'📦'}
                 </div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: qc, fontFamily: 'monospace' }}>
                   {box.calidad}%
                 </div>
-                <div style={{ fontSize: 7, color: C.textSec, fontFamily: 'monospace' }}>
-                  #{box.id}
-                </div>
+                <div style={{ fontSize: 7, color: C.textSec, fontFamily: 'monospace' }}>#{box.id}</div>
               </div>
             );
           })}
@@ -593,28 +653,25 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
           )}
         </div>
 
-        {/* ── Belt track ────────────────────────────────────────────────────── */}
+        {/* ── Belt track ───────────────────────────────────────────────────── */}
         <div style={{ position: 'absolute', top: `${BELT_Y + 1}%`, left: '3%', right: '3%',
           height: 8, background: C.bgTer, borderRadius: 4, border: `1px solid ${C.border}`, zIndex: 1 }} />
         {[0,1,2,3,4,5,6,7,8].map(i => (
-          <div key={i} style={{ position: 'absolute',
-            left: `${4 + i * 11}%`, top: `${BELT_Y + 2}%`,
+          <div key={i} style={{ position: 'absolute', left: `${4+i*11}%`, top: `${BELT_Y+2}%`,
             width: '5%', height: 5, background: `${C.bgSec}90`, borderRadius: 1, zIndex: 2 }} />
         ))}
         <div style={{ position: 'absolute', left: '2%', top: `${BELT_Y - 12}%`,
           fontSize: 8, color: C.textSec, fontFamily: 'monospace', textAlign: 'center', lineHeight: 1.4 }}>
-          📥<br/>INICIO
-        </div>
+          📥<br/>INICIO</div>
 
-        {/* ── Gate 1 — Green (if calidad >= 90 → APROBADO) ─────────────────── */}
-        {/* Arm shaft */}
+        {/* ── Gate 1 (green / if ≥ 90) ─────────────────────────────────────── */}
         <div style={{ position: 'absolute', left: `${G1_X}%`, top: arm1 ? '28%' : '36%',
           transform: 'translateX(-50%)',
-          width: 7, height: arm1 ? `${BELT_Y - 28 + 6}%` : `${BELT_Y - 36 + 6}%`,
+          width: 7, height: arm1 ? `${BELT_Y-28+6}%` : `${BELT_Y-36+6}%`,
           background: arm1 ? C.green : C.bgTer, borderRadius: 4,
           transition: 'all 0.35s ease', boxShadow: arm1 ? `0 0 12px ${C.green}90` : 'none', zIndex: 2 }} />
         <div style={{ position: 'absolute', left: `${G1_X}%`, top: '36%',
-          transform: 'translate(-50%, -100%)', width: 38, height: 26,
+          transform: 'translate(-50%,-100%)', width: 38, height: 26,
           background: arm1 ? `${C.green}30` : C.bgSec,
           border: `2px solid ${arm1 ? C.green : C.border}`, borderRadius: 6,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
@@ -623,20 +680,20 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
         </div>
         <div style={{ position: 'absolute', left: `${G1_X}%`, top: '22%',
           transform: 'translateX(-50%)', fontSize: 8, fontFamily: 'monospace',
-          color: arm1 ? C.green : C.textSec, textAlign: 'center',
-          transition: 'color 0.3s', whiteSpace: 'nowrap', zIndex: 2 }}>if ≥ 90</div>
-        <div style={{ position: 'absolute', left: `${G1_X}%`, top: `${BELT_Y + 5}%`,
-          transform: 'translateX(-50%)', width: 2, height: `${DROP_Y - BELT_Y - 8}%`,
+          color: arm1 ? C.green : C.textSec, textAlign: 'center', whiteSpace: 'nowrap', zIndex: 2 }}>
+          if ≥ 90</div>
+        <div style={{ position: 'absolute', left: `${G1_X}%`, top: `${BELT_Y+5}%`,
+          transform: 'translateX(-50%)', width: 2, height: `${DROP_Y-BELT_Y-8}%`,
           background: arm1 ? `${C.green}70` : `${C.border}30`, transition: 'background 0.5s', zIndex: 1 }} />
 
-        {/* ── Gate 2 — Yellow (else if calidad >= 70 → RETRABAJAR) ─────────── */}
+        {/* ── Gate 2 (yellow / else if ≥ 70) ──────────────────────────────── */}
         <div style={{ position: 'absolute', left: `${G2_X}%`, top: arm2 ? '28%' : '36%',
           transform: 'translateX(-50%)',
-          width: 7, height: arm2 ? `${BELT_Y - 28 + 6}%` : `${BELT_Y - 36 + 6}%`,
+          width: 7, height: arm2 ? `${BELT_Y-28+6}%` : `${BELT_Y-36+6}%`,
           background: arm2 ? C.amber : C.bgTer, borderRadius: 4,
           transition: 'all 0.35s ease', boxShadow: arm2 ? `0 0 12px ${C.amber}90` : 'none', zIndex: 2 }} />
         <div style={{ position: 'absolute', left: `${G2_X}%`, top: '36%',
-          transform: 'translate(-50%, -100%)', width: 38, height: 26,
+          transform: 'translate(-50%,-100%)', width: 38, height: 26,
           background: arm2 ? `${C.amber}30` : C.bgSec,
           border: `2px solid ${arm2 ? C.amber : C.border}`, borderRadius: 6,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
@@ -645,18 +702,18 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
         </div>
         <div style={{ position: 'absolute', left: `${G2_X}%`, top: '22%',
           transform: 'translateX(-50%)', fontSize: 8, fontFamily: 'monospace',
-          color: arm2 ? C.amber : C.textSec, textAlign: 'center',
-          transition: 'color 0.3s', whiteSpace: 'nowrap', zIndex: 2 }}>else if ≥ 70</div>
-        <div style={{ position: 'absolute', left: `${G2_X}%`, top: `${BELT_Y + 5}%`,
-          transform: 'translateX(-50%)', width: 2, height: `${DROP_Y - BELT_Y - 8}%`,
+          color: arm2 ? C.amber : C.textSec, textAlign: 'center', whiteSpace: 'nowrap', zIndex: 2 }}>
+          else if ≥ 70</div>
+        <div style={{ position: 'absolute', left: `${G2_X}%`, top: `${BELT_Y+5}%`,
+          transform: 'translateX(-50%)', width: 2, height: `${DROP_Y-BELT_Y-8}%`,
           background: arm2 ? `${C.amber}70` : `${C.border}30`, transition: 'background 0.5s', zIndex: 1 }} />
 
-        {/* ── End of belt — else → RESIDUOS ────────────────────────────────── */}
-        <div style={{ position: 'absolute', left: `${END_X}%`, top: `${BELT_Y + 5}%`,
-          transform: 'translateX(-50%)', width: 2, height: `${DROP_Y - BELT_Y - 8}%`,
-          background: `${C.red}30`, zIndex: 1 }} />
+        {/* ── End of belt (else → RESIDUOS) ────────────────────────────────── */}
+        <div style={{ position: 'absolute', left: `${END_X}%`, top: `${BELT_Y+5}%`,
+          transform: 'translateX(-50%)', width: 2, height: `${DROP_Y-BELT_Y-8}%`,
+          background: `${C.red}35`, zIndex: 1 }} />
         <div style={{ position: 'absolute', left: `${END_X}%`, top: '36%',
-          transform: 'translate(-50%, -100%)', fontSize: 8, fontFamily: 'monospace',
+          transform: 'translate(-50%,-100%)', fontSize: 8, fontFamily: 'monospace',
           color: C.textSec, textAlign: 'center', whiteSpace: 'nowrap', zIndex: 2 }}>else</div>
 
         {/* ── Destination zones ─────────────────────────────────────────────── */}
@@ -664,12 +721,12 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
         <DestZone x={G2_X}  icon="⚠️" name="RETRABAJAR" color={C.amber} />
         <DestZone x={END_X} icon="❌" name="DESCARTE"   color={C.red}   />
 
-        {/* ── Moving box on belt ────────────────────────────────────────────── */}
+        {/* ── Moving box ────────────────────────────────────────────────────── */}
         {pos && activeBox && (
           <div style={{
             position: 'absolute', left: pos.left, top: pos.top,
-            transform: 'translate(-50%, -50%)',
-            transition: 'left 0.55s cubic-bezier(0.4,0,0.2,1), top 0.42s ease',
+            transform: 'translate(-50%,-50%)',
+            transition: 'left 0.5s cubic-bezier(0.4,0,0.2,1), top 0.4s ease',
             zIndex: 10, width: 38, height: 38,
             background: `linear-gradient(135deg, ${boxColor}cc, ${boxColor}77)`,
             border: `2px solid ${boxColor}`, borderRadius: 6,
@@ -677,18 +734,19 @@ function SorterMechanic({ stampsRequired, stampedCount, onActivate }: MechanicPr
             gap: 1, boxShadow: `0 3px 12px ${boxColor}55`,
           }}>
             <div style={{ fontSize: 13 }}>📦</div>
-            <div style={{ fontSize: 8, color: 'white', fontFamily: 'monospace', fontWeight: 700,
-              lineHeight: 1 }}>{activeQual}%</div>
+            <div style={{ fontSize: 8, color: 'white', fontFamily: 'monospace', fontWeight: 700 }}>
+              {activeQual}%
+            </div>
           </div>
         )}
 
-        {/* ── Checkpoint popup ──────────────────────────────────────────────── */}
+        {/* ── Checkpoint popup (pauses animation) ───────────────────────────── */}
         {checkpoint && <CheckpointPopup cp={checkpoint} />}
 
         <style>{`
           @keyframes cpSlide {
-            from { opacity: 0; transform: translateY(-5px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0)   scale(1);    }
           }
         `}</style>
       </div>
