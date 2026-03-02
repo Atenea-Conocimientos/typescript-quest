@@ -1,17 +1,23 @@
 import { initialize, transform } from 'esbuild-wasm';
 
-let initialized = false;
+// Store the init promise so initialize() is only called once
+let initPromise: Promise<void> | null = null;
 
-async function ensureInitialized() {
-  if (!initialized) {
-    await initialize({
+function ensureInitialized(): Promise<void> {
+  if (!initPromise) {
+    initPromise = initialize({
       wasmURL: '/esbuild.wasm',
       worker: false,
+    }).then(() => {
+      // Signal main thread that we're ready
+      self.postMessage({ type: 'ready' });
+    }).catch((err) => {
+      // Reset so we can retry on next call
+      initPromise = null;
+      throw err;
     });
-    initialized = true;
-    // Signal the main thread that we're ready
-    self.postMessage({ type: 'ready' });
   }
+  return initPromise;
 }
 
 // Pre-warm immediately on worker creation
@@ -47,19 +53,10 @@ self.onmessage = async (event: MessageEvent<{ code: string; id: string }>) => {
       });
     `;
 
-    // Evaluate with captured output
-    const logCapture = (global: Record<string, unknown>) => {
-      global.__captureLog = (...args: unknown[]) => {
-        output.push(args.map(String).join(' '));
-      };
-    };
-
-    // eslint-disable-next-line no-new-func
     const fn = new Function('__captureLog', sandboxCode);
     const captureLog = (...args: unknown[]) => {
       output.push(args.map(String).join(' '));
     };
-    void logCapture; // suppress unused warning
     fn(captureLog);
 
     const duration = Date.now() - startTime;
