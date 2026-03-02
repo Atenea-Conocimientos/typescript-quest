@@ -3,15 +3,15 @@ import { Level } from '../../engine/types';
 const level1: Level = {
   id: 'p1-l1',
   phase: 1,
-  title: 'Hello Factory',
-  objective: 'Make the robot announce: "BOLT READY"',
-  concept: 'console.log & strings',
+  title: 'Hola Fábrica',
+  objective: 'Hacé que el robot anuncie: "PERNO LISTO"',
+  concept: 'console.log y strings',
   mentor: 'athenix',
-  hint: 'Use console.log() to send a message. Strings are wrapped in quotes: "like this".',
-  starterCode: `// Make the robot say "BOLT READY"
+  hint: 'Usá console.log() para enviar un mensaje. Los strings van entre comillas: "así".',
+  starterCode: `// Hacé que el robot diga "PERNO LISTO"
 console.log("???")`,
-  solution: `console.log("BOLT READY")`,
-  validate: (output: string[]) => output.some((line) => line.includes('BOLT READY')),
+  solution: `console.log("PERNO LISTO")`,
+  validate: (output: string[]) => output.some((line) => line.includes('PERNO LISTO')),
   stampsRequired: 5,
 };
 

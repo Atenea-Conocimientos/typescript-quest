@@ -3,17 +3,24 @@ import { Level } from '../../engine/types';
 const level2: Level = {
   id: 'p1-l2',
   phase: 1,
-  title: 'Count the Bolts',
-  objective: 'Store the number 5 in a variable and log it',
-  concept: 'Variables: let & const',
+  title: 'Contar Pernos',
+  objective: 'Declarar el nombre de la fábrica con const y la cantidad de pernos con let, luego mostrá ambos',
+  concept: 'Variables: let y const',
   mentor: 'athenix',
-  hint: 'Use "let" for values that can change, "const" for values that stay fixed. Try: let bolts = 5',
-  starterCode: `// Store 5 bolts in a variable and log it
-let bolts = ???
-console.log(bolts)`,
-  solution: `let bolts = 5
-console.log(bolts)`,
-  validate: (output: string[]) => output.some((line) => line.trim() === '5'),
+  hint: 'Usá const para valores que no cambian (como un nombre) y let para los que sí pueden cambiar (como un contador). Ej: const nombre = "Olympus" / let cantidad = 5',
+  starterCode: `// Nombre fijo de la fábrica (usa const — no cambia)
+const fabrica = "???"
+
+// Cantidad de pernos (usa let — puede cambiar)
+let pernos = ???
+
+console.log(fabrica + ": " + pernos + " pernos")`,
+  solution: `const fabrica = "Olympus"
+let pernos = 5
+console.log(fabrica + ": " + pernos + " pernos")`,
+  validate: (output: string[]) =>
+    output.some((line) => line.includes('Olympus') && line.includes('5')),
+  stampsRequired: 3,
 };
 
 export default level2;

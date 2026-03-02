@@ -51,7 +51,7 @@ export default function EditorPanel({ starterCode, onResult, onCodeChange }: Edi
             border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-secondary)',
           }}
         >
-          Reset
+          Reiniciar
         </button>
         <button
           onClick={handleDeploy}
@@ -62,7 +62,7 @@ export default function EditorPanel({ starterCode, onResult, onCodeChange }: Edi
             border: 'none', borderRadius: 6, color: 'white', minWidth: 80,
           }}
         >
-          {running ? '⚙️ Running...' : '🚀 Deploy'}
+          {running ? '⚙️ Ejecutando...' : '🚀 Deploy'}
         </button>
       </div>
 
@@ -80,14 +80,14 @@ export default function EditorPanel({ starterCode, onResult, onCodeChange }: Edi
           padding: '6px 12px', fontSize: 11, color: 'var(--text-secondary)',
           borderBottom: '1px solid var(--border)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1,
         }}>
-          Console Output
+          Consola de Salida
         </div>
         <div style={{
           flex: 1, overflowY: 'auto', padding: '8px 12px',
           fontFamily: 'monospace', fontSize: 13,
         }}>
           {!result && (
-            <span style={{ color: 'var(--text-secondary)' }}>Click "Deploy" to run your code...</span>
+            <span style={{ color: 'var(--text-secondary)' }}>Hacé click en "Deploy" para ejecutar tu código...</span>
           )}
           {result?.error && (
             <div style={{ color: 'var(--red)' }}>

@@ -25,8 +25,8 @@ export default function App() {
           TypeScript Quest
         </h1>
         <p style={{ fontSize: 18, color: 'var(--text-secondary)', maxWidth: 480, lineHeight: 1.6 }}>
-          Program robots in the <strong style={{ color: 'var(--text-primary)' }}>Olympus Factory</strong>.
-          Learn TypeScript by building, automating, and scaling a futuristic assembly line.
+          Programá robots en la <strong style={{ color: 'var(--text-primary)' }}>Fábrica Olympus</strong>.
+          Aprendé TypeScript construyendo, automatizando y escalando una línea de ensamblaje futurista.
         </p>
         <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
           {['🦉 Athenix', '⚡ Hermes', '🎯 Apolo', '🏹 Artemisa'].map((m) => (
@@ -54,7 +54,7 @@ export default function App() {
             (e.target as HTMLButtonElement).style.boxShadow = '0 0 24px rgba(124, 58, 237, 0.4)';
           }}
         >
-          Enter the Factory →
+          Entrar a la Fábrica →
         </button>
       </div>
     );

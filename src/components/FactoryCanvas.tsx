@@ -55,10 +55,10 @@ class FactoryScene extends Phaser.Scene {
     this.buildRobot(this.STAMP_X);
 
     // Factory label
-    this.add.text(14, 14, '🏭 OLYMPUS FACTORY', {
+    this.add.text(14, 14, '🏭 FÁBRICA OLYMPUS', {
       fontSize: '13px', color: '#7c3aed', fontFamily: 'Inter, sans-serif', fontStyle: 'bold',
     });
-    this.add.text(14, 33, 'UNIT-01 — READY', {
+    this.add.text(14, 33, 'UNIDAD-01 — LISTA', {
       fontSize: '10px', color: '#8b949e', fontFamily: 'JetBrains Mono, monospace',
     }).setName('statusText');
 
@@ -87,7 +87,7 @@ class FactoryScene extends Phaser.Scene {
     this.tweens.add({ targets: eye, alpha: 0.3, duration: 900, yoyo: true, repeat: -1 });
 
     // Label
-    this.add.text(x, baseY + 10, 'UNIT-01', {
+    this.add.text(x, baseY + 10, 'UNIDAD-01', {
       fontSize: '8px', color: '#06b6d4', fontFamily: 'JetBrains Mono, monospace',
     }).setOrigin(0.5);
 
@@ -120,7 +120,7 @@ class FactoryScene extends Phaser.Scene {
         onComplete: () => {
           // Stamp mark on box
           this.addStampMark(box, success);
-          this.updateStatus(success ? '✅ STAMPED' : '❌ REJECTED', success ? '#22c55e' : '#ef4444');
+          this.updateStatus(success ? '✅ SELLADO' : '❌ RECHAZADO', success ? '#22c55e' : '#ef4444');
 
           // Particles
           const color = success ? 0x22c55e : 0xef4444;
@@ -138,7 +138,7 @@ class FactoryScene extends Phaser.Scene {
             this.boxState = 'leaving';
             this.onBoxLeft?.();
             this.time.delayedCall(1200, () => {
-              this.updateStatus('UNIT-01 — READY', '#8b949e');
+              this.updateStatus('UNIDAD-01 — LISTA', '#8b949e');
             });
           });
         },
@@ -205,7 +205,7 @@ class FactoryScene extends Phaser.Scene {
       if (box.x >= this.STAMP_X) {
         box.x = this.STAMP_X;
         this.boxState = 'waiting';
-        this.updateStatus('UNIT-01 — WAITING ▼', '#f59e0b');
+        this.updateStatus('UNIDAD-01 — ESPERANDO ▼', '#f59e0b');
         this.onBoxAtStation?.();
 
         // Pulse the box
@@ -297,7 +297,7 @@ export default function FactoryCanvas({
               fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace',
               color: allDone ? '#22c55e' : '#e6edf3',
             }}>
-              {allDone ? '🎉 ALL STAMPED!' : `${stampedCount} / ${stampsRequired} stamped`}
+              {allDone ? '🎉 ¡TODO SELLADO!' : `${stampedCount} / ${stampsRequired} selladas`}
             </div>
             {/* Progress dots */}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
@@ -336,7 +336,7 @@ export default function FactoryCanvas({
               color: lastResult === 'success' ? '#22c55e' : '#ef4444',
               fontFamily: 'JetBrains Mono, monospace',
             }}>
-              {lastResult === 'success' ? '✅ BOLT READY — STAMPED!' : '❌ Wrong output — fix your code!'}
+              {lastResult === 'success' ? '✅ ¡Correcto! ¡Caja sellada!' : '❌ Salida incorrecta — ¡corregí tu código!'}
             </div>
           )}
           <button
@@ -360,11 +360,11 @@ export default function FactoryCanvas({
               animation: boxAtStation && !stamping && !lastResult ? 'pulse 1.5s infinite' : 'none',
             }}
           >
-            {stamping ? '⚙️ Running code...' : '🔨 STAMP IT'}
+            {stamping ? '⚙️ Ejecutando código...' : '🔨 ¡SELLAR!'}
           </button>
           {!boxAtStation && (
             <div style={{ fontSize: 11, color: '#8b949e', fontFamily: 'monospace' }}>
-              ⏳ Waiting for next box...
+              ⏳ Esperando la próxima caja...
             </div>
           )}
         </div>

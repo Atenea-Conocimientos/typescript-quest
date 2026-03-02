@@ -98,16 +98,16 @@ export default function GameScreen() {
                 Phase {level.phase} · {level.concept}
               </span>
               {completedLevels.has(currentLevelId) && (
-                <span style={{ fontSize: 11, color: 'var(--green)' }}>✅ Completed</span>
+                <span style={{ fontSize: 11, color: 'var(--green)' }}>✅ Completado</span>
               )}
             </div>
             <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 3, lineHeight: 1.3 }}>{level.title}</h2>
             <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              🎯 <strong>Goal:</strong> {level.objective}
+              🎯 <strong>Objetivo:</strong> {level.objective}
             </p>
             {stampsRequired > 0 && (
               <p style={{ fontSize: 11, color: 'var(--cyan-light)', margin: '6px 0 0', lineHeight: 1.4 }}>
-                📦 Click each box on the right to stamp it with your code. Stamp all {stampsRequired} to complete!
+                📦 Cuando una caja llegue a la estación, hacé click en <strong>¡SELLAR!</strong> para estamparla con tu código. ¡Sellá las {stampsRequired} para completar!
               </p>
             )}
           </div>
@@ -136,7 +136,7 @@ export default function GameScreen() {
             background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border)', flexShrink: 0,
           }}>
             <span style={{ fontSize: 11, color: 'var(--text-secondary)', marginRight: 4 }}>
-              🏭 <strong style={{ color: 'var(--text-primary)' }}>Olympus Factory</strong>
+              🏭 <strong style={{ color: 'var(--text-primary)' }}>Fábrica Olympus</strong>
             </span>
             <div style={{ flex: 1 }} />
             {ALL_LEVELS.map((l, i) => (
@@ -178,10 +178,10 @@ export default function GameScreen() {
               }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', marginBottom: 2 }}>
-                    ✅ {stampsRequired > 0 ? `${stampsRequired} Boxes Stamped!` : 'Objective Complete!'}
+                    ✅ {stampsRequired > 0 ? `¡${stampsRequired} cajas selladas!` : '¡Objetivo completado!'}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                    The factory is producing {level.title.toLowerCase()} 🔩
+                    La fábrica está produciendo {level.title.toLowerCase()} 🔩
                   </div>
                 </div>
                 {ALL_LEVELS.findIndex((l) => l.id === currentLevelId) < ALL_LEVELS.length - 1 && (
@@ -192,7 +192,7 @@ export default function GameScreen() {
                       borderRadius: 8, color: 'white', fontWeight: 600, fontSize: 12, cursor: 'pointer',
                     }}
                   >
-                    Next Level →
+                    Siguiente nivel →
                   </button>
                 )}
               </div>
