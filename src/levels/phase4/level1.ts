@@ -29,6 +29,20 @@ for (const cantidad of lotes) {
   if (cantidad > maximo) maximo = cantidad
 }
 console.log(\`Lote más grande: \${maximo} piezas\`)`,
+  codeHints: [
+    'const lotes: number[] = []',
+    '',
+    'lotes.push(120, 85, 200, 60, 175)',
+    '',
+    'console.log(`Total lotes: ${lotes.length}`)',
+    'console.log(`Primer lote: ${lotes[0]} piezas`)',
+    '',
+    'let maximo: number = 0',
+    'for (const cantidad of lotes) {',
+    '  if (cantidad > maximo) maximo = cantidad',
+    '}',
+    'console.log(`Lote más grande: ${maximo} piezas`)',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('Total lotes: 5')) &&
     output.some((l) => /Lote m[aá]s grande: \d+/.test(l)),

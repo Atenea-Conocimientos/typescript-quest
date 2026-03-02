@@ -42,6 +42,22 @@ const catalogo: Producto[] = [
 const aprobados = catalogo.filter(p => p.aprobado)
 console.log(\`Aprobados: \${aprobados.length} / \${catalogo.length}\`)
 console.log(\`Primer aprobado: \${aprobados[0].nombre}\`)`,
+  codeHints: [
+    'interface Producto {',
+    '  id: number; nombre: string; peso: number',
+    '  aprobado: boolean; proveedor?: string',
+    '}',
+    '',
+    'const catalogo: Producto[] = [',
+    '  { id: 1, nombre: "Perno M6",  peso: 5,   aprobado: true },',
+    '  { id: 2, nombre: "Tuerca M6", peso: 3,   aprobado: false },',
+    '  { id: 3, nombre: "Arandela",  peso: 1.5, aprobado: true, proveedor: "MetalPro" },',
+    ']',
+    '',
+    'const aprobados = catalogo.filter(p => p.aprobado)',
+    'console.log(`Aprobados: ${aprobados.length} / ${catalogo.length}`)',
+    'console.log(`Primer aprobado: ${aprobados[0].nombre}`)',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('Aprobados: 2 / 3')) &&
     output.some((l) => l.includes('Primer aprobado:')),

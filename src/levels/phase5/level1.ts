@@ -58,6 +58,16 @@ console.log(\`Peso total del lote: \${pesoTotal}g\`)
 
 const sinProv = lote.find(p => !p.proveedor)
 console.log(\`Sin proveedor: \${sinProv?.nombre ?? "ninguno"}\`)`,
+  codeHints: [
+    'const filtrados = lote.filter(p => p.aprobado && p.peso > 3)',
+    'const pesoTotal = filtrados.reduce((acc, p) => acc + p.peso, 0)',
+    '',
+    'console.log(`Productos filtrados: ${filtrados.length}`)',
+    'console.log(`Peso total del lote: ${pesoTotal}g`)',
+    '',
+    'const sinProv = lote.find(p => !p.proveedor)',
+    'console.log(`Sin proveedor: ${sinProv?.nombre ?? "ninguno"}`)',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('Productos filtrados: 2')) &&
     output.some((l) => l.includes('Peso total del lote: 9g')),

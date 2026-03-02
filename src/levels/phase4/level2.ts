@@ -35,6 +35,19 @@ function generarEtiqueta(pieza: string, lote: number): string {
 const efic = calcularEficiencia(847, 1000)
 const etiq = generarEtiqueta("perno m6", 42)
 console.log(\`\${etiq} → Eficiencia: \${efic.toFixed(1)}%\`)`,
+  codeHints: [
+    'function calcularEficiencia(producidas: number, meta: number): number {',
+    '  return (producidas / meta) * 100',
+    '}',
+    '',
+    'function generarEtiqueta(pieza: string, lote: number): string {',
+    '  return `[LOTE-${lote}] ${pieza.toUpperCase()}`',
+    '}',
+    '',
+    'const efic = calcularEficiencia(847, 1000)',
+    'const etiq = generarEtiqueta("perno m6", 42)',
+    'console.log(`${etiq} → Eficiencia: ${efic.toFixed(1)}%`)',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('PERNO M6') && l.includes('84.7%')),
   stampsRequired: 4,

@@ -26,6 +26,15 @@ if (calidad >= 90) {
 } else {
   console.log("❌ DESCARTE → Sector Residuos")
 }`,
+  codeHints: [
+    'if (calidad >= 90) {',
+    '  console.log("✅ APROBADO → Sector Despacho")',
+    '} else if (calidad >= 70) {',
+    '  console.log("⚠️ RETRABAJAR → Sector Reparación")',
+    '} else {',
+    '  console.log("❌ DESCARTE → Sector Residuos")',
+    '}',
+  ],
   validate: (output: string[]) =>
     output.some((line) => line.includes('RETRABAJAR')),
   stampsRequired: 3,

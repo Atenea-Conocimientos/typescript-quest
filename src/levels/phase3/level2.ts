@@ -30,6 +30,18 @@ for (let f = 0; f < filas; f++) {
 }
 
 console.log(\`Total estaciones: \${filas * columnas}\`)`,
+  codeHints: [
+    'let estacion: number = 1',
+    '',
+    'for (let f = 0; f < filas; f++) {',
+    '  for (let c = 0; c < columnas; c++) {',
+    '    console.log(`🔩 Estación ${estacion} → fila ${f}, col ${c}`)',
+    '    estacion++',
+    '  }',
+    '}',
+    '',
+    'console.log(`Total estaciones: ${filas * columnas}`)',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('Total estaciones: 16')) &&
     output.some((l) => l.includes('Estaci')),

@@ -33,6 +33,8 @@ export interface Level {
   hint: string;
   starterCode: string;
   solution: string;
+  /** Progressive code skeleton — each string is one hint line revealed on click */
+  codeHints?: string[];
   validate: (output: string[]) => boolean;
   stampsRequired?: number;
   mechanic: LevelMechanic;

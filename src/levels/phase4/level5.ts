@@ -46,6 +46,28 @@ function procesarEstado(estado: EstadoLinea): void {
 procesarEstado(EstadoLinea.ACTIVA)
 procesarEstado(EstadoLinea.ERROR)
 procesarEstado(EstadoLinea.PAUSA)`,
+  codeHints: [
+    'enum EstadoLinea {',
+    '  ACTIVA = "ACTIVA", PAUSA = "PAUSA",',
+    '  MANTENIMIENTO = "MANTENIMIENTO",',
+    '  ERROR = "ERROR", APAGADA = "APAGADA",',
+    '}',
+    '',
+    'function procesarEstado(estado: EstadoLinea): void {',
+    '  switch (estado) {',
+    '    case EstadoLinea.ACTIVA:',
+    '      return console.log("✅ Línea produciendo")',
+    '    case EstadoLinea.ERROR:',
+    '      return console.log("🚨 Llamar al técnico")',
+    '    default:',
+    '      console.log(`Estado: ${estado}`)',
+    '  }',
+    '}',
+    '',
+    'procesarEstado(EstadoLinea.ACTIVA)',
+    'procesarEstado(EstadoLinea.ERROR)',
+    'procesarEstado(EstadoLinea.PAUSA)',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('produciendo')) &&
     output.some((l) => l.includes('cnico') || l.includes('técnico')) &&

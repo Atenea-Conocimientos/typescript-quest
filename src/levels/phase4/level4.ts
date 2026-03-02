@@ -37,6 +37,21 @@ const level11: Level = {
 console.log(identificarPieza(42))
 console.log(identificarPieza("perno m6"))
 console.log(identificarPieza(null))`,
+  codeHints: [
+    'function identificarPieza(entrada: number | string | null): string {',
+    '  if (entrada === null) {',
+    '    return "⚠️ Sensor vacío"',
+    '  }',
+    '  if (typeof entrada === "number") {',
+    '    return `Buscando pieza con ID: ${entrada}`',
+    '  }',
+    '  return `Pieza por nombre: ${entrada.toUpperCase()}`',
+    '}',
+    '',
+    'console.log(identificarPieza(42))',
+    'console.log(identificarPieza("perno m6"))',
+    'console.log(identificarPieza(null))',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('ID: 42')) &&
     output.some((l) => l.toUpperCase().includes('PERNO M6')) &&

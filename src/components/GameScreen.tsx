@@ -169,6 +169,7 @@ export default function GameScreen() {
             <EditorPanel
               key={currentLevelId}
               starterCode={level.starterCode}
+              codeHints={level.codeHints}
               onResult={(r) => handleResult(r)}
               onCodeChange={(code) => { currentCodeRef.current = code; }}
             />

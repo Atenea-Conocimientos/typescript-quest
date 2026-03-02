@@ -31,6 +31,15 @@ while (energia > 0) {
 }
 
 console.log(\`Turno finalizado. Total: \${piezas} piezas\`)`,
+  codeHints: [
+    'while (energia > 0) {',
+    '  energia -= consumo',
+    '  piezas++',
+    '  console.log(`⚡ Energía: ${energia} | Pieza #${piezas} lista`)',
+    '}',
+    '',
+    'console.log(`Turno finalizado. Total: ${piezas} piezas`)',
+  ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('Turno finalizado') && l.includes('10 piezas')),
   stampsRequired: 4,
