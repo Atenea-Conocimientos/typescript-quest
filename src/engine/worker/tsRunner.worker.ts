@@ -1,4 +1,12 @@
-import { initialize, transform } from 'esbuild-wasm';
+// Type-only import for IDE support; runtime import uses the ESM browser build
+import type { initialize as InitFn, transform as TransformFn } from 'esbuild-wasm';
+// Use the ESM browser build directly — the default entry is CJS and breaks in Vite workers
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { initialize as _init, transform as _transform } from 'esbuild-wasm/esm/browser.min.js';
+
+const initialize = _init as typeof InitFn;
+const transform = _transform as typeof TransformFn;
 
 // Store the init promise so initialize() is only called once
 let initPromise: Promise<void> | null = null;
@@ -13,14 +21,14 @@ function ensureInitialized(): Promise<void> {
       console.log('[tsRunner.worker] ✅ initialize() resolved');
       // Signal main thread that we're ready
       self.postMessage({ type: 'ready' });
-    }).catch((err) => {
+    }).catch((err: unknown) => {
       console.error('[tsRunner.worker] ❌ initialize() rejected:', err);
       // Reset so we can retry on next call
       initPromise = null;
       throw err;
     });
   }
-  return initPromise;
+  return initPromise!;
 }
 
 // Pre-warm immediately on worker creation
