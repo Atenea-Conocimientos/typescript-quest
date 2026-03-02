@@ -61,6 +61,8 @@ export default function GameScreen() {
   }, [level, stampsRequired, currentLevelId]);
 
   // ── MechanicCanvas activate handler (all non-speech mechanics) ───────────────
+  // For visual mechanics: 1 successful run = level complete.
+  // Repetition doesn't teach anything when the code is the same each click.
   const handleActivate = useCallback(async (): Promise<{ output: string[]; success: boolean }> => {
     const code = currentCodeRef.current;
     const result = await runCode(code);
@@ -68,22 +70,12 @@ export default function GameScreen() {
     const valid = result.success && level.validate(result.output);
     setLastSuccess(valid);
     if (valid) {
-      if (stampsRequired > 0) {
-        setStampedCount((prev) => {
-          const next = prev + 1;
-          if (next >= stampsRequired) {
-            setSuccessState(true);
-            setCompletedLevels((c) => new Set([...c, currentLevelId]));
-          }
-          return next;
-        });
-      } else {
-        setSuccessState(true);
-        setCompletedLevels((c) => new Set([...c, currentLevelId]));
-      }
+      setStampedCount(1);
+      setSuccessState(true);
+      setCompletedLevels((c) => new Set([...c, currentLevelId]));
     }
     return { output: result.output, success: valid };
-  }, [level, stampsRequired, currentLevelId]);
+  }, [level, currentLevelId]);
 
   // ── Navigation ────────────────────────────────────────────────────────────────
   function handleNextLevel() {
@@ -237,8 +229,8 @@ export default function GameScreen() {
               <MechanicCanvas
                 key={currentLevelId}
                 mechanic={level.mechanic}
-                stampsRequired={stampsRequired}
-                stampedCount={stampedCount}
+                stampsRequired={1}
+                stampedCount={successState ? 1 : 0}
                 onActivate={handleActivate}
               />
             )}
