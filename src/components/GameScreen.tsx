@@ -139,25 +139,35 @@ export default function GameScreen() {
               🏭 <strong style={{ color: 'var(--text-primary)' }}>Fábrica Olympus</strong>
             </span>
             <div style={{ flex: 1 }} />
-            {ALL_LEVELS.map((l, i) => (
-              <button
-                key={l.id}
-                onClick={() => handleLevelChange(l.id)}
-                title={l.title}
-                style={{
-                  width: 26, height: 26, borderRadius: '50%', border: 'none', fontSize: 11,
-                  fontWeight: 700, cursor: 'pointer',
-                  background: l.id === currentLevelId ? 'var(--purple)' :
-                    completedLevels.has(l.id) ? '#22c55e33' : 'var(--bg-primary)',
-                  color: l.id === currentLevelId ? 'white' :
-                    completedLevels.has(l.id) ? 'var(--green)' : 'var(--text-secondary)',
-                  boxShadow: l.id === currentLevelId ? '0 0 8px rgba(124,58,237,0.5)' : 'none',
-                  transition: 'background 0.15s',
-                }}
-              >
-                {i + 1}
-              </button>
-            ))}
+            {ALL_LEVELS.map((l, i) => {
+              const prevLevel = ALL_LEVELS[i - 1];
+              const phaseBreak = i > 0 && l.phase !== prevLevel?.phase;
+              return (
+                <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {phaseBreak && (
+                    <div style={{
+                      width: 1, height: 16, background: 'var(--border)', marginRight: 2,
+                    }} />
+                  )}
+                  <button
+                    onClick={() => handleLevelChange(l.id)}
+                    title={`F${l.phase} · ${l.title}`}
+                    style={{
+                      width: 26, height: 26, borderRadius: '50%', border: 'none', fontSize: 11,
+                      fontWeight: 700, cursor: 'pointer',
+                      background: l.id === currentLevelId ? 'var(--purple)' :
+                        completedLevels.has(l.id) ? '#22c55e33' : 'var(--bg-primary)',
+                      color: l.id === currentLevelId ? 'white' :
+                        completedLevels.has(l.id) ? 'var(--green)' : 'var(--text-secondary)',
+                      boxShadow: l.id === currentLevelId ? '0 0 8px rgba(124,58,237,0.5)' : 'none',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           {/* Factory Canvas */}
