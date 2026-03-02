@@ -2,14 +2,13 @@ import { useState, useRef, useCallback } from 'react';
 import EditorPanel from '../editor/EditorPanel';
 import Mentor from '../mentors/Mentor';
 import { LEVELS_BY_ID, INITIAL_LEVEL_ID, ALL_LEVELS } from '../levels';
-import { RunResult } from '../engine/types';
 import { runCode } from '../engine/GameEngine';
 import FactoryCanvas from './FactoryCanvas';
 
 export default function GameScreen() {
   const [currentLevelId, setCurrentLevelId] = useState(INITIAL_LEVEL_ID);
   const [completedLevels, setCompletedLevels] = useState<Set<string>>(new Set());
-  const [lastResult, setLastResult] = useState<RunResult | null>(null);
+
   const [successState, setSuccessState] = useState(false);
   const [stampedCount, setStampedCount] = useState(0);
 
@@ -19,9 +18,8 @@ export default function GameScreen() {
   const level = LEVELS_BY_ID[currentLevelId];
   const stampsRequired = level.stampsRequired ?? 0;
 
-  function handleResult(result: RunResult) {
-    setLastResult(result);
-    // For levels without stamp mechanic, validate immediately
+  function handleResult(result: { success: boolean; output: string[] }) {
+    // For levels without stamp mechanic, validate on Deploy
     if (stampsRequired === 0) {
       if (result.success && level.validate(result.output)) {
         setSuccessState(true);
@@ -32,11 +30,10 @@ export default function GameScreen() {
     }
   }
 
-  // Box click: run current code, validate, increment stamp → returns true if stamped
-  const handleBoxClick = useCallback(async (): Promise<boolean> => {
+  // Stamp: run current code, validate, increment stamp → returns true if stamped
+  const handleRunCode = useCallback(async (): Promise<boolean> => {
     const code = currentCodeRef.current;
     const result = await runCode(code);
-    setLastResult(result);
 
     if (result.success && level.validate(result.output)) {
       setStampedCount((prev) => {
@@ -58,7 +55,6 @@ export default function GameScreen() {
       const nextLevel = ALL_LEVELS[currentIndex + 1];
       setCurrentLevelId(nextLevel.id);
       setSuccessState(false);
-      setLastResult(null);
       setStampedCount(0);
       currentCodeRef.current = nextLevel.starterCode ?? '';
     }
@@ -68,7 +64,6 @@ export default function GameScreen() {
     const l = LEVELS_BY_ID[levelId];
     setCurrentLevelId(levelId);
     setSuccessState(false);
-    setLastResult(null);
     setStampedCount(0);
     currentCodeRef.current = l?.starterCode ?? '';
   }
@@ -167,10 +162,9 @@ export default function GameScreen() {
           {/* Factory Canvas */}
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
             <FactoryCanvas
-              isRunning={!!(lastResult?.success)}
               stampsRequired={stampsRequired}
               stampedCount={stampedCount}
-              onBoxClick={stampsRequired > 0 ? handleBoxClick : undefined}
+              onRunCode={stampsRequired > 0 ? handleRunCode : undefined}
             />
 
             {/* Success Overlay */}

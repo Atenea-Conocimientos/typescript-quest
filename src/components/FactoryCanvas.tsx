@@ -1,20 +1,29 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Phaser from 'phaser';
 
 interface FactoryCanvasProps {
-  isRunning: boolean;
   stampsRequired?: number;
   stampedCount: number;
-  onBoxClick?: () => Promise<boolean>; // true = stamped, false = failed
+  onRunCode?: () => Promise<boolean>;
+  active?: boolean;
 }
 
+// ── Phaser Scene ──────────────────────────────────────────────────────────────
+
+type StampResult = 'success' | 'fail' | null;
+
 class FactoryScene extends Phaser.Scene {
+  // Callbacks set by React
+  onBoxAtStation?: () => void;
+  onBoxLeft?: () => void;
+
   private beltTiles: Phaser.GameObjects.Rectangle[] = [];
-  private products: Phaser.GameObjects.Container[] = [];
-  private robotArm!: Phaser.GameObjects.Rectangle;
-  private beltSpeed = 80;
-  private spawnTimer = 0;
-  private active = false;
+  private beltSpeed = 90; // px/s
+  private currentBox: Phaser.GameObjects.Container | null = null;
+  private boxState: 'moving' | 'waiting' | 'stamping' | 'leaving' | 'none' = 'none';
+  private spawnCooldown = 0;
+  private STAMP_X = 0;
+  private BELT_Y = 0;
 
   constructor() {
     super({ key: 'FactoryScene' });
@@ -22,190 +31,228 @@ class FactoryScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+    this.STAMP_X = width * 0.42;
+    this.BELT_Y = height * 0.6;
 
-    // Background grid
-    const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x21262d, 0.5);
-    for (let x = 0; x < width; x += 40) graphics.lineBetween(x, 0, x, height);
-    for (let y = 0; y < height; y += 40) graphics.lineBetween(0, y, width, y);
+    // Grid background
+    const g = this.add.graphics();
+    g.lineStyle(1, 0x21262d, 0.4);
+    for (let x = 0; x < width; x += 40) g.lineBetween(x, 0, x, height);
+    for (let y = 0; y < height; y += 40) g.lineBetween(0, y, width, y);
 
-    // Conveyor belt
-    const beltY = height * 0.62;
-    const beltHeight = 44;
-    this.add.rectangle(width / 2, beltY, width, beltHeight, 0x21262d).setStrokeStyle(2, 0x30363d);
-
-    const stripeCount = Math.ceil(width / 32) + 2;
-    for (let i = 0; i < stripeCount; i++) {
-      const stripe = this.add.rectangle(i * 32, beltY, 16, beltHeight, 0x30363d);
-      this.beltTiles.push(stripe);
+    // Belt
+    const bh = 46;
+    this.add.rectangle(width / 2, this.BELT_Y, width, bh, 0x1a2030).setStrokeStyle(1, 0x30363d);
+    const stripes = Math.ceil(width / 32) + 2;
+    for (let i = 0; i < stripes; i++) {
+      this.beltTiles.push(this.add.rectangle(i * 32, this.BELT_Y, 16, bh, 0x30363d));
     }
+    // Belt rails
+    this.add.rectangle(width / 2, this.BELT_Y - bh / 2 - 3, width, 5, 0x7c3aed);
+    this.add.rectangle(width / 2, this.BELT_Y + bh / 2 + 3, width, 5, 0x7c3aed);
 
-    this.add.rectangle(width / 2, beltY - beltHeight / 2 - 3, width, 6, 0x7c3aed);
-    this.add.rectangle(width / 2, beltY + beltHeight / 2 + 3, width, 6, 0x7c3aed);
+    // Robot arm station
+    this.buildRobot(this.STAMP_X);
 
-    // Robot arm
-    const robotX = width * 0.35;
-    const robotBaseY = beltY - beltHeight / 2 - 28;
-
-    this.add.rectangle(robotX, robotBaseY - 20, 50, 40, 0x374151).setStrokeStyle(2, 0x7c3aed);
-    this.robotArm = this.add.rectangle(robotX, robotBaseY - 50, 8, 40, 0x7c3aed);
-    this.robotArm.setOrigin(0.5, 1);
-
-    const eye = this.add.circle(robotX, robotBaseY - 22, 6, 0x06b6d4);
-    this.tweens.add({ targets: eye, alpha: 0.3, duration: 800, yoyo: true, repeat: -1 });
-
-    this.add.text(robotX, robotBaseY + 12, 'UNIT-01', {
-      fontSize: '9px', color: '#06b6d4', fontFamily: 'JetBrains Mono, monospace',
-    }).setOrigin(0.5);
-
-    // Status text
-    this.add.text(16, 16, '🏭 OLYMPUS FACTORY', {
+    // Factory label
+    this.add.text(14, 14, '🏭 OLYMPUS FACTORY', {
       fontSize: '13px', color: '#7c3aed', fontFamily: 'Inter, sans-serif', fontStyle: 'bold',
     });
-    this.add.text(16, 34, 'UNIT-01 — STANDBY', {
+    this.add.text(14, 33, 'UNIT-01 — READY', {
       fontSize: '10px', color: '#8b949e', fontFamily: 'JetBrains Mono, monospace',
     }).setName('statusText');
 
-    const particles = this.add.particles(robotX, robotBaseY - 60, '__DEFAULT', {
-      speed: { min: 10, max: 30 },
-      angle: { min: 240, max: 300 },
-      scale: { start: 0.3, end: 0 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 400,
-      quantity: 0,
-      tint: [0x7c3aed, 0x06b6d4],
-      blendMode: 'ADD',
-    });
-    particles.setName('sparks');
-    void particles;
+    // Spawn first box after short delay
+    this.spawnCooldown = 1200;
   }
 
-  setActive(active: boolean) {
-    this.active = active;
-    if (!this.children) return;
-    const statusText = this.children.getByName('statusText') as Phaser.GameObjects.Text | null;
-    if (statusText) {
-      statusText.setText(active ? 'UNIT-01 — RUNNING ▶' : 'UNIT-01 — STANDBY');
-      statusText.setColor(active ? '#22c55e' : '#8b949e');
-    }
-    const sparks = this.children.getByName('sparks') as Phaser.GameObjects.Particles.ParticleEmitter | null;
-    if (sparks) sparks.setQuantity(active ? 2 : 0);
+  private buildRobot(x: number) {
+    const baseY = this.BELT_Y - 23 - 30;
 
-    if (active && this.robotArm) {
+    // Vertical pole
+    this.add.rectangle(x, this.BELT_Y - 23 - 60, 6, 80, 0x374151);
+
+    // Robot body
+    this.add.rectangle(x, baseY - 24, 52, 42, 0x374151).setStrokeStyle(2, 0x7c3aed);
+
+    // Stamp head (the part that moves down)
+    const armGroup = this.add.container(x, baseY - 2);
+    const armShaft = this.add.rectangle(0, -14, 10, 28, 0x7c3aed);
+    const stampHead = this.add.rectangle(0, 4, 28, 12, 0x5b21b6).setStrokeStyle(2, 0xa78bfa);
+    armGroup.add([armShaft, stampHead]);
+    armGroup.setName('robotArm');
+
+    // Eye glow
+    const eye = this.add.circle(x, baseY - 26, 6, 0x06b6d4);
+    this.tweens.add({ targets: eye, alpha: 0.3, duration: 900, yoyo: true, repeat: -1 });
+
+    // Label
+    this.add.text(x, baseY + 10, 'UNIT-01', {
+      fontSize: '8px', color: '#06b6d4', fontFamily: 'JetBrains Mono, monospace',
+    }).setOrigin(0.5);
+
+    // Stamp zone indicator (dashed line)
+    const zoneG = this.add.graphics();
+    zoneG.lineStyle(1, 0x7c3aed, 0.3);
+    zoneG.lineBetween(x, this.BELT_Y - 23, x, this.BELT_Y + 23);
+  }
+
+  /** Called by React after stamp result is determined */
+  finishStamp(success: boolean) {
+    if (this.boxState !== 'waiting' || !this.currentBox) return;
+    this.boxState = 'stamping';
+    this.playStampAnimation(success);
+  }
+
+  private playStampAnimation(success: boolean) {
+    const arm = this.children.getByName('robotArm') as Phaser.GameObjects.Container | null;
+    const box = this.currentBox;
+    if (!box) return;
+
+    // Arm punches down
+    if (arm) {
       this.tweens.add({
-        targets: this.robotArm,
-        y: this.robotArm.y + 20,
-        duration: 300,
+        targets: arm,
+        y: arm.y + 22,
+        duration: 120,
         yoyo: true,
-        repeat: 2,
-        ease: 'Sine.easeInOut',
+        ease: 'Cubic.easeIn',
+        onComplete: () => {
+          // Stamp mark on box
+          this.addStampMark(box, success);
+          this.updateStatus(success ? '✅ STAMPED' : '❌ REJECTED', success ? '#22c55e' : '#ef4444');
+
+          // Particles
+          const color = success ? 0x22c55e : 0xef4444;
+          const px = this.add.particles(box.x, box.y, '__DEFAULT', {
+            speed: { min: 20, max: 60 },
+            scale: { start: 0.4, end: 0 },
+            lifespan: 500,
+            quantity: 8,
+            tint: [color],
+          });
+          this.time.delayedCall(600, () => px.destroy());
+
+          // Short pause then release box
+          this.time.delayedCall(700, () => {
+            this.boxState = 'leaving';
+            this.onBoxLeft?.();
+            this.time.delayedCall(1200, () => {
+              this.updateStatus('UNIT-01 — READY', '#8b949e');
+            });
+          });
+        },
       });
     }
   }
 
+  private addStampMark(box: Phaser.GameObjects.Container, success: boolean) {
+    const mark = this.add.text(0, 0, success ? '✅' : '❌', {
+      fontSize: '20px',
+    }).setOrigin(0.5);
+    mark.setDepth(10);
+    box.add(mark);
+    this.tweens.add({ targets: mark, scaleX: 1.3, scaleY: 1.3, duration: 150, yoyo: true });
+  }
+
+  private updateStatus(text: string, color: string) {
+    const s = this.children.getByName('statusText') as Phaser.GameObjects.Text | null;
+    if (s) { s.setText(text); s.setColor(color); }
+  }
+
+  private spawnBox() {
+    const boxY = this.BELT_Y - 20;
+    const container = this.add.container(-48, boxY);
+
+    // Box body
+    const body = this.add.rectangle(0, 0, 44, 38, 0x1e3a5f).setStrokeStyle(2, 0x3b82f6);
+    // Box details
+    const stripe = this.add.rectangle(0, -4, 36, 4, 0x3b82f6).setAlpha(0.5);
+    const bolt = this.add.rectangle(0, 8, 14, 8, 0xf59e0b).setStrokeStyle(1, 0xfcd34d);
+    const boltLabel = this.add.text(0, 8, 'PKG', {
+      fontSize: '6px', color: '#fbbf24', fontFamily: 'monospace',
+    }).setOrigin(0.5);
+
+    container.add([body, stripe, bolt, boltLabel]);
+    container.setDepth(5);
+    this.currentBox = container;
+    this.boxState = 'moving';
+  }
+
   update(_time: number, delta: number) {
-    if (!this.active) return;
     const speed = this.beltSpeed * (delta / 1000);
-    this.beltTiles.forEach((tile) => {
-      tile.x += speed;
-      if (tile.x > this.scale.width + 16) tile.x -= this.scale.width + 32;
+
+    // Animate belt stripes (always)
+    this.beltTiles.forEach((t) => {
+      t.x += speed;
+      if (t.x > this.scale.width + 16) t.x -= this.scale.width + 32;
     });
-    this.products.forEach((p, i) => {
-      p.x += speed;
-      if (p.x > this.scale.width + 40) { p.destroy(); this.products.splice(i, 1); }
-    });
-    this.spawnTimer += delta;
-    if (this.spawnTimer > 1200) { this.spawnTimer = 0; this.spawnProduct(); }
+
+    // Spawn cooldown
+    if (this.boxState === 'none') {
+      this.spawnCooldown -= delta;
+      if (this.spawnCooldown <= 0) {
+        this.spawnBox();
+        this.spawnCooldown = 2500;
+      }
+    }
+
+    const box = this.currentBox;
+    if (!box) return;
+
+    if (this.boxState === 'moving') {
+      box.x += speed;
+      if (box.x >= this.STAMP_X) {
+        box.x = this.STAMP_X;
+        this.boxState = 'waiting';
+        this.updateStatus('UNIT-01 — WAITING ▼', '#f59e0b');
+        this.onBoxAtStation?.();
+
+        // Pulse the box
+        this.tweens.add({
+          targets: box,
+          scaleX: 1.08, scaleY: 1.08,
+          duration: 400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        });
+      }
+    } else if (this.boxState === 'leaving') {
+      box.x += speed * 2.5;
+      if (box.x > this.scale.width + 60) {
+        box.destroy();
+        this.currentBox = null;
+        this.boxState = 'none';
+        this.spawnCooldown = 800;
+      }
+    }
   }
-
-  spawnProduct() {
-    const beltY = this.scale.height * 0.62 - 18;
-    const container = this.add.container(-20, beltY);
-    const bolt = this.add.rectangle(0, 0, 18, 18, 0xf59e0b).setStrokeStyle(2, 0xfcd34d);
-    const label = this.add.text(0, 0, '⬡', { fontSize: '12px', color: '#fcd34d' }).setOrigin(0.5);
-    container.add([bolt, label]);
-    this.products.push(container);
-    this.tweens.add({ targets: bolt, alpha: 0.7, duration: 300, yoyo: true, repeat: 2 });
-  }
 }
 
-// ── Stamp Box Component ───────────────────────────────────────────────────────
-
-interface StampBoxProps {
-  index: number;
-  stamped: boolean;
-  animating: boolean;
-  failed: boolean;
-  onClick: () => void;
-  disabled: boolean;
-}
-
-function StampBox({ index, stamped, animating, failed, onClick, disabled }: StampBoxProps) {
-  return (
-    <div
-      onClick={!disabled && !stamped ? onClick : undefined}
-      title={stamped ? 'Stamped ✅' : 'Click to stamp this box'}
-      style={{
-        width: 64, height: 64,
-        borderRadius: 10,
-        border: `2px solid ${stamped ? '#22c55e' : failed ? '#ef4444' : '#374151'}`,
-        background: stamped ? '#22c55e18' : failed ? '#ef444418' : '#161b22',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        cursor: stamped || disabled ? 'default' : 'pointer',
-        transition: 'all 0.2s',
-        transform: animating ? 'scale(1.15)' : 'scale(1)',
-        boxShadow: stamped
-          ? '0 0 16px rgba(34,197,94,0.4)'
-          : failed
-          ? '0 0 12px rgba(239,68,68,0.3)'
-          : 'none',
-        userSelect: 'none',
-      }}
-    >
-      {stamped ? (
-        <>
-          <span style={{ fontSize: 22 }}>✅</span>
-          <span style={{ fontSize: 9, color: '#22c55e', marginTop: 2, fontFamily: 'monospace' }}>STAMPED</span>
-        </>
-      ) : animating ? (
-        <>
-          <span style={{ fontSize: 22 }}>⚙️</span>
-          <span style={{ fontSize: 9, color: '#8b949e', marginTop: 2, fontFamily: 'monospace' }}>RUNNING...</span>
-        </>
-      ) : failed ? (
-        <>
-          <span style={{ fontSize: 22 }}>❌</span>
-          <span style={{ fontSize: 9, color: '#ef4444', marginTop: 2, fontFamily: 'monospace' }}>FAILED</span>
-        </>
-      ) : (
-        <>
-          <span style={{ fontSize: 22 }}>📦</span>
-          <span style={{ fontSize: 9, color: '#8b949e', marginTop: 2, fontFamily: 'monospace' }}>BOX {index + 1}</span>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── React Component ───────────────────────────────────────────────────────────
 
 export default function FactoryCanvas({
-  isRunning,
   stampsRequired = 0,
   stampedCount,
-  onBoxClick,
+  onRunCode,
+  active = true,
 }: FactoryCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<FactoryScene | null>(null);
-
-  const [animatingBox, setAnimatingBox] = useState<number | null>(null);
-  const [failedBox, setFailedBox] = useState<number | null>(null);
+  const [boxAtStation, setBoxAtStation] = useState(false);
+  const [stamping, setStamping] = useState(false);
+  const [lastResult, setLastResult] = useState<StampResult>(null);
 
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
     const scene = new FactoryScene();
     sceneRef.current = scene;
+
+    scene.onBoxAtStation = () => setBoxAtStation(true);
+    scene.onBoxLeft = () => {
+      setBoxAtStation(false);
+      setLastResult(null);
+    };
+
     gameRef.current = new Phaser.Game({
       type: Phaser.AUTO,
       parent: containerRef.current,
@@ -217,81 +264,119 @@ export default function FactoryCanvas({
     return () => { gameRef.current?.destroy(true); gameRef.current = null; sceneRef.current = null; };
   }, []);
 
-  useEffect(() => {
-    if (!sceneRef.current) return;
-    try { sceneRef.current.setActive(isRunning); } catch { /* scene not ready */ }
-  }, [isRunning]);
+  void active; // may be used for pausing later
 
-  // Next box to stamp = first unstamped one
-  const nextBox = stampedCount < stampsRequired ? stampedCount : null;
+  const handleStamp = useCallback(async () => {
+    if (!onRunCode || !boxAtStation || stamping) return;
+    setStamping(true);
+    const success = await onRunCode();
+    setLastResult(success ? 'success' : 'fail');
+    sceneRef.current?.finishStamp(success);
+    setStamping(false);
+  }, [onRunCode, boxAtStation, stamping]);
 
-  async function handleBoxClick(i: number) {
-    if (!onBoxClick || i !== nextBox || animatingBox !== null) return;
-    setAnimatingBox(i);
-    setFailedBox(null);
-    try {
-      const success = await onBoxClick();
-      if (success) {
-        setFailedBox(null);
-      } else {
-        setFailedBox(i);
-      }
-    } catch {
-      setFailedBox(i);
-    } finally {
-      setAnimatingBox(null);
-    }
-  }
+  const allDone = stampsRequired > 0 && stampedCount >= stampsRequired;
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Phaser canvas */}
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
-      {/* Stamp boxes overlay */}
+      {/* Stamp counter (top-right) */}
       {stampsRequired > 0 && (
         <div style={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          gap: 10,
-          pointerEvents: 'none',
+          position: 'absolute', top: 12, right: 14,
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: '#0d1117cc', border: '1px solid #30363d',
+          borderRadius: 8, padding: '6px 12px',
+          backdropFilter: 'blur(6px)',
         }}>
-          {/* Progress label */}
-          <div style={{
-            fontSize: 11,
-            color: stampedCount >= stampsRequired ? '#22c55e' : '#8b949e',
-            fontFamily: 'JetBrains Mono, monospace',
-            fontWeight: 700,
-            textAlign: 'right',
-          }}>
-            {stampedCount >= stampsRequired
-              ? '🎉 ALL BOXES STAMPED!'
-              : `STAMP BOXES: ${stampedCount}/${stampsRequired}`}
-          </div>
-          {/* Box grid */}
-          <div style={{
-            display: 'flex', flexWrap: 'wrap', gap: 8,
-            justifyContent: 'flex-end', maxWidth: 220,
-            pointerEvents: 'all',
-          }}>
-            {Array.from({ length: stampsRequired }, (_, i) => (
-              <StampBox
-                key={i}
-                index={i}
-                stamped={i < stampedCount}
-                animating={animatingBox === i}
-                failed={failedBox === i}
-                onClick={() => handleBoxClick(i)}
-                disabled={animatingBox !== null || i !== nextBox}
-              />
-            ))}
+          <span style={{ fontSize: 14 }}>📦</span>
+          <div>
+            <div style={{
+              fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace',
+              color: allDone ? '#22c55e' : '#e6edf3',
+            }}>
+              {allDone ? '🎉 ALL STAMPED!' : `${stampedCount} / ${stampsRequired} stamped`}
+            </div>
+            {/* Progress dots */}
+            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+              {Array.from({ length: stampsRequired }, (_, i) => (
+                <div key={i} style={{
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: i < stampedCount ? '#22c55e' : '#21262d',
+                  border: `1px solid ${i < stampedCount ? '#22c55e' : '#30363d'}`,
+                  transition: 'background 0.3s',
+                  boxShadow: i < stampedCount ? '0 0 6px rgba(34,197,94,0.6)' : 'none',
+                }} />
+              ))}
+            </div>
           </div>
         </div>
       )}
+
+      {/* Stamp action button (bottom center, appears when box is waiting) */}
+      {stampsRequired > 0 && !allDone && (
+        <div style={{
+          position: 'absolute',
+          bottom: 28,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 6,
+          transition: 'opacity 0.2s',
+          opacity: boxAtStation ? 1 : 0.3,
+          pointerEvents: boxAtStation ? 'all' : 'none',
+        }}>
+          {lastResult && !stamping && (
+            <div style={{
+              fontSize: 12, fontWeight: 700,
+              color: lastResult === 'success' ? '#22c55e' : '#ef4444',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}>
+              {lastResult === 'success' ? '✅ BOLT READY — STAMPED!' : '❌ Wrong output — fix your code!'}
+            </div>
+          )}
+          <button
+            onClick={handleStamp}
+            disabled={stamping || !boxAtStation}
+            style={{
+              padding: '12px 32px',
+              fontSize: 15,
+              fontWeight: 700,
+              background: stamping
+                ? '#374151'
+                : lastResult === 'fail'
+                ? 'linear-gradient(135deg, #7f1d1d, #991b1b)'
+                : 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+              border: `2px solid ${stamping ? '#4b5563' : lastResult === 'fail' ? '#ef4444' : '#a78bfa'}`,
+              borderRadius: 12,
+              color: 'white',
+              cursor: stamping ? 'default' : 'pointer',
+              boxShadow: boxAtStation && !stamping ? '0 0 24px rgba(124,58,237,0.5)' : 'none',
+              transition: 'all 0.2s',
+              animation: boxAtStation && !stamping && !lastResult ? 'pulse 1.5s infinite' : 'none',
+            }}
+          >
+            {stamping ? '⚙️ Running code...' : '🔨 STAMP IT'}
+          </button>
+          {!boxAtStation && (
+            <div style={{ fontSize: 11, color: '#8b949e', fontFamily: 'monospace' }}>
+              ⏳ Waiting for next box...
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pulse keyframe */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { box-shadow: 0 0 16px rgba(124,58,237,0.4); }
+          50% { box-shadow: 0 0 32px rgba(124,58,237,0.8); }
+        }
+      `}</style>
     </div>
   );
 }
