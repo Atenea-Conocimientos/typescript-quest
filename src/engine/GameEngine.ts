@@ -15,6 +15,7 @@ function getWorker(): Worker {
       // Handle warmup ack
       if ((result as any).type === 'ready') {
         workerReady = true;
+        console.log('[GameEngine] ✅ Worker is ready');
         return;
       }
 
@@ -25,8 +26,12 @@ function getWorker(): Worker {
       }
     };
     worker.onerror = (err) => {
-      console.error('[GameEngine] Worker error:', err);
+      console.error('[GameEngine] ❌ Worker error:', err.message, err);
     };
+    worker.onmessageerror = (err) => {
+      console.error('[GameEngine] ❌ Worker message error:', err);
+    };
+    console.log('[GameEngine] Worker created');
   }
   return worker;
 }
@@ -47,6 +52,7 @@ export function runCode(code: string): Promise<RunResult> {
 
     setTimeout(() => {
       if (pendingCallbacks.has(id)) {
+        console.error(`[GameEngine] ❌ Timeout after ${timeout}ms, workerReady=${workerReady}`);
         pendingCallbacks.delete(id);
         resolve({
           success: false,

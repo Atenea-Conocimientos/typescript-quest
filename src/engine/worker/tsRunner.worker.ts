@@ -5,13 +5,16 @@ let initPromise: Promise<void> | null = null;
 
 function ensureInitialized(): Promise<void> {
   if (!initPromise) {
+    console.log('[tsRunner.worker] Calling esbuild initialize(), wasmURL=/esbuild.wasm');
     initPromise = initialize({
       wasmURL: '/esbuild.wasm',
       worker: false,
     }).then(() => {
+      console.log('[tsRunner.worker] ✅ initialize() resolved');
       // Signal main thread that we're ready
       self.postMessage({ type: 'ready' });
     }).catch((err) => {
+      console.error('[tsRunner.worker] ❌ initialize() rejected:', err);
       // Reset so we can retry on next call
       initPromise = null;
       throw err;
@@ -21,12 +24,14 @@ function ensureInitialized(): Promise<void> {
 }
 
 // Pre-warm immediately on worker creation
-ensureInitialized().catch((err) => {
-  console.error('[tsRunner.worker] Failed to initialize esbuild-wasm:', err);
-});
+console.log('[tsRunner.worker] Starting initialization...');
+ensureInitialized()
+  .then(() => console.log('[tsRunner.worker] ✅ esbuild-wasm initialized successfully'))
+  .catch((err) => console.error('[tsRunner.worker] ❌ Failed to initialize esbuild-wasm:', err));
 
 self.onmessage = async (event: MessageEvent<{ code: string; id: string }>) => {
   const { code, id } = event.data;
+  console.log('[tsRunner.worker] Received run request, id=', id);
   const output: string[] = [];
   const startTime = Date.now();
 
