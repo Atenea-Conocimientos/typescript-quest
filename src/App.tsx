@@ -1,9 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import GameScreen from './components/GameScreen';
+import { warmupWorker } from './engine/GameEngine';
 import './styles/globals.css';
 
 export default function App() {
   const [started, setStarted] = useState(false);
+
+  // Pre-warm the TypeScript worker as soon as the app loads
+  useEffect(() => {
+    warmupWorker();
+  }, []);
 
   if (!started) {
     return (

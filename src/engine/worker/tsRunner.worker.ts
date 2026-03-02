@@ -5,12 +5,19 @@ let initialized = false;
 async function ensureInitialized() {
   if (!initialized) {
     await initialize({
-      wasmURL: 'https://unpkg.com/esbuild-wasm@0.24.2/esbuild.wasm',
+      wasmURL: '/esbuild.wasm',
       worker: false,
     });
     initialized = true;
+    // Signal the main thread that we're ready
+    self.postMessage({ type: 'ready' });
   }
 }
+
+// Pre-warm immediately on worker creation
+ensureInitialized().catch((err) => {
+  console.error('[tsRunner.worker] Failed to initialize esbuild-wasm:', err);
+});
 
 self.onmessage = async (event: MessageEvent<{ code: string; id: string }>) => {
   const { code, id } = event.data;
