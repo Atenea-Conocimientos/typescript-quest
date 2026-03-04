@@ -122,6 +122,14 @@ export default function GameScreen() {
     'bar-sort':      `Implementá el sort y hacé click en 📊 ORDENAR LOTE para ver las barras ordenarse.`,
     maze:            `Implementá DFS y hacé click en 🔍 BUSCAR CAMINO para ver al robot navegar el laberinto.`,
     parallel:        `Implementá las Promises y hacé click en ⚡ LANZAR TURNO para ver los robots trabajar en paralelo.`,
+    inspector:       `Completá los utility types y hacé click en 🔍 INSPECCIONAR ROBOT para ver los campos filtrados.`,
+    catalog:         `Completá el Record y Readonly y hacé click en 📋 CARGAR CATÁLOGO para ver el inventario bloqueado.`,
+    transformer:     `Completá los mapped types y hacé click en ⚙️ TRANSFORMAR ESQUEMA para ver los campos mutarse.`,
+    narrower:        `Completá los type guards y hacé click en 🔬 ESCANEAR LOTE para ver el escáner identificar cada pieza.`,
+    switcher:        `Completá el switch exhaustivo y hacé click en 📡 PROCESAR EVENTOS para ver el panel de control.`,
+    faultlog:        `Completá los errores custom y hacé click en ⚠️ SIMULAR FALLAS para ver el log de errores tipados.`,
+    'result-board':  `Completá el Result pattern y hacé click en ✅ VALIDAR LOTE para ver el tablero ok/err.`,
+    'factory-complete': `Implementá el sistema completo y hacé click en 🏭 ACTIVAR FÁBRICA para la celebración final.`,
   };
 
   return (

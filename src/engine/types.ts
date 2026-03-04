@@ -19,7 +19,15 @@ export type LevelMechanic =
   | 'recursion-tree'  // p6-l3: recursion — tree node counter
   | 'bar-sort'        // p7-l1: sorting — animated bar chart
   | 'maze'            // p7-l2: DFS — grid maze navigation
-  | 'parallel';       // p7-l3: async/await — parallel progress bars
+  | 'parallel'        // p7-l3: async/await — parallel progress bars
+  | 'inspector'       // p8-l1: Pick/Omit/Partial — field inspector panel
+  | 'catalog'         // p8-l2: Record/Readonly — locked catalog cards
+  | 'transformer'     // p8-l3: mapped types — schema field transformer
+  | 'narrower'        // p9-l1: typeof/instanceof/in — type scanner belt
+  | 'switcher'        // p9-l2: discriminated unions/never — switch panel
+  | 'faultlog'        // p10-l1: custom errors — error log terminal
+  | 'result-board'    // p10-l2: Result<T,E> pattern — ok/err split board
+  | 'factory-complete'; // p11-l1: boss final — full factory celebration
 
 export interface Mentor {
   id: MentorId;

@@ -1941,6 +1941,537 @@ function ParallelMechanic({ stampsRequired, stampedCount, onActivate }: Mechanic
   );
 }
 
+// ─── Phase 8-11 Mechanics ──────────────────────────────────────────────────────
+
+function InspectorMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const FIELDS = [
+    { key: 'nombre',        label: 'nombre: string',       included: true },
+    { key: 'modelo',        label: 'modelo: string',       included: true },
+    { key: 'energia',       label: 'energia: number',      included: false },
+    { key: 'piezas',        label: 'piezas: number',       included: false },
+    { key: 'codigoInterno', label: 'codigoInterno: string',included: false },
+  ];
+  const [loading, setLoading] = useState(false);
+  const [revealed, setRevealed] = useState(0);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setRevealed(0);
+    const { success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      for (let i = 1; i <= FIELDS.length; i++) {
+        await new Promise(r => setTimeout(r, 220 * i));
+        setRevealed(i);
+      }
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="🔍 Inspector de Partes — Pick · Omit · Partial" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="🔍 INSPECCIONAR ROBOT" />
+      </div>
+    </>}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 8px', justifyContent: 'center', height: '100%' }}>
+        <div style={{ fontSize: 10, color: C.textSec, fontFamily: 'monospace', marginBottom: 4 }}>
+          Pick&lt;Robot, "nombre" | "modelo"&gt;
+        </div>
+        {FIELDS.map((f, i) => (
+          <div key={f.key} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '7px 12px', borderRadius: 8,
+            border: `1px solid ${revealed > i ? (f.included ? C.green : C.border) : C.border}`,
+            background: revealed > i ? (f.included ? '#22c55e14' : C.bgSec) : C.bgTer,
+            opacity: revealed > i ? 1 : 0.35,
+            transition: 'all 0.3s',
+          }}>
+            <span style={{ fontSize: 11, fontFamily: 'monospace', color: C.text, flex: 1 }}>{f.label}</span>
+            {revealed > i && (
+              <span style={{ fontSize: 11, fontWeight: 700,
+                color: f.included ? C.green : C.textSec }}>
+                {f.included ? '✅ Pick' : '⬜ Omit'}
+              </span>
+            )}
+          </div>
+        ))}
+        {revealed >= FIELDS.length && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: C.cyan, fontFamily: 'monospace', marginTop: 4 }}>
+            Pick: 2 campos · Omit: 3 campos
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+function CatalogMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const ITEMS = [
+    { nombre: 'pernos',    stock: 500 },
+    { nombre: 'tuercas',   stock: 320 },
+    { nombre: 'arandelas', stock: 150 },
+    { nombre: 'engranajes',stock: 45  },
+  ];
+  const [loading, setLoading] = useState(false);
+  const [revealed, setRevealed] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setRevealed(0); setLocked(false);
+    const { success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      for (let i = 1; i <= ITEMS.length; i++) {
+        await new Promise(r => setTimeout(r, 300 * i));
+        setRevealed(i);
+      }
+      await new Promise(r => setTimeout(r, 400));
+      setLocked(true);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="📋 Catálogo Inmutable — Record · Readonly" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="📋 CARGAR CATÁLOGO" />
+      </div>
+    </>}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: 12, height: '100%', alignContent: 'center' }}>
+        {ITEMS.map((item, i) => (
+          <div key={item.nombre} style={{
+            padding: '10px 12px', borderRadius: 10,
+            border: `1px solid ${revealed > i ? C.amber : C.border}`,
+            background: revealed > i ? '#f59e0b0e' : C.bgTer,
+            opacity: revealed > i ? 1 : 0.3,
+            transform: revealed > i ? 'scale(1)' : 'scale(0.92)',
+            transition: 'all 0.35s',
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div style={{ fontSize: 11, color: C.text, fontFamily: 'monospace', fontWeight: 700 }}>{item.nombre}</div>
+            <div style={{ fontSize: 13, color: C.amber, fontWeight: 700 }}>{item.stock} uds</div>
+            {locked && revealed > i && (
+              <div style={{ fontSize: 10, color: C.textSec }}>🔒 Readonly</div>
+            )}
+          </div>
+        ))}
+        {locked && (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', fontSize: 11, color: C.green, fontFamily: 'monospace' }}>
+            Catálogo sellado — Readonly activo ✅
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+function TransformerMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const FIELDS = [
+    { name: 'nombre', before: 'string',  after: 'string | null' },
+    { name: 'energia',before: 'number',  after: 'number | null' },
+    { name: 'activo', before: 'boolean', after: 'boolean | null'},
+  ];
+  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<'idle'|'transforming'|'done'>('idle');
+  const [transformed, setTransformed] = useState(0);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setPhase('idle'); setTransformed(0);
+    const { success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      setPhase('transforming');
+      for (let i = 1; i <= FIELDS.length; i++) {
+        await new Promise(r => setTimeout(r, 350));
+        setTransformed(i);
+      }
+      setPhase('done');
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="⚙️ Transformador de Esquemas — Mapped Types" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="⚙️ TRANSFORMAR ESQUEMA" />
+      </div>
+    </>}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '10px 8px', justifyContent: 'center', height: '100%' }}>
+        <div style={{ fontSize: 10, color: C.textSec, fontFamily: 'monospace', marginBottom: 2 }}>
+          type Nullable&lt;T&gt; = {'{ [K in keyof T]: T[K] | null }'}
+        </div>
+        {FIELDS.map((f, i) => (
+          <div key={f.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ padding: '6px 10px', borderRadius: 6, background: C.bgTer,
+              border: `1px solid ${C.border}`, fontFamily: 'monospace', fontSize: 11, flex: 1 }}>
+              <span style={{ color: C.cyan }}>{f.name}</span>
+              <span style={{ color: C.textSec }}>: {f.before}</span>
+            </div>
+            <div style={{
+              fontSize: 18, color: C.purple, opacity: transformed > i ? 1 : 0.15,
+              transform: transformed > i ? 'translateX(0)' : 'translateX(-6px)',
+              transition: 'all 0.3s',
+            }}>→</div>
+            <div style={{
+              padding: '6px 10px', borderRadius: 6, flex: 1,
+              background: transformed > i ? '#7c3aed18' : C.bgTer,
+              border: `1px solid ${transformed > i ? C.purple : C.border}`,
+              fontFamily: 'monospace', fontSize: 11,
+              opacity: transformed > i ? 1 : 0.2,
+              transition: 'all 0.4s',
+            }}>
+              <span style={{ color: C.cyan }}>{f.name}</span>
+              <span style={{ color: transformed > i ? C.purpleL : C.textSec }}>: {f.after}</span>
+            </div>
+          </div>
+        ))}
+        {phase === 'done' && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: C.green, fontFamily: 'monospace', marginTop: 4 }}>
+            Mapped type aplicado: {FIELDS.length} campos transformados ✅
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+function NarrowerMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const ITEMS = [
+    { tipo: 'metal',      emoji: '⚙️', color: '#94a3b8', label: 'Metal: 2.5kg' },
+    { tipo: 'electronica',emoji: '⚡', color: C.cyan,    label: 'Electronica: 12V' },
+    { tipo: 'metal',      emoji: '⚙️', color: '#94a3b8', label: 'Metal: 0.8kg' },
+    { tipo: 'electronica',emoji: '⚡', color: C.cyan,    label: 'Electronica: 5V' },
+  ];
+  const [loading, setLoading] = useState(false);
+  const [scanned, setScanned] = useState(0);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setScanned(0);
+    const { success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      for (let i = 1; i <= ITEMS.length; i++) {
+        await new Promise(r => setTimeout(r, 500));
+        setScanned(i);
+      }
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="🔬 Escáner de Tipos — typeof · instanceof · in" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="🔬 ESCANEAR LOTE" />
+      </div>
+    </>}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 8px', height: '100%', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          {ITEMS.map((item, i) => (
+            <div key={i} style={{
+              width: 72, padding: '10px 6px', borderRadius: 10, textAlign: 'center',
+              border: `2px solid ${scanned > i ? item.color : C.border}`,
+              background: scanned > i ? `${item.color}18` : C.bgTer,
+              transition: 'all 0.4s',
+            }}>
+              <div style={{ fontSize: 22, marginBottom: 4 }}>{item.emoji}</div>
+              {scanned > i ? (
+                <>
+                  <div style={{ fontSize: 9, color: item.color, fontWeight: 700, fontFamily: 'monospace' }}>
+                    {item.tipo}
+                  </div>
+                  <div style={{ fontSize: 9, color: C.textSec, fontFamily: 'monospace', marginTop: 2 }}>
+                    {item.label}
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 9, color: C.textSec }}>?</div>
+              )}
+            </div>
+          ))}
+        </div>
+        {scanned > 0 && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: C.textSec, fontFamily: 'monospace' }}>
+            Escaneadas: {scanned}/{ITEMS.length} piezas
+          </div>
+        )}
+        {scanned >= ITEMS.length && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: C.green, fontFamily: 'monospace' }}>
+            ✅ Type narrowing completado
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+function SwitcherMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const EVENTS = [
+    { tipo: 'produccion',   emoji: '✅', color: C.green,  label: 'Producción: 150 piezas' },
+    { tipo: 'falla',        emoji: '⚠️', color: C.red,    label: 'Falla ERR-042 — CRÍTICA' },
+    { tipo: 'mantenimiento',emoji: '🔧', color: C.amber,  label: 'Mantenimiento: 30 min' },
+    { tipo: 'falla',        emoji: '⚠️', color: '#f97316',label: 'Falla WARN-007' },
+  ];
+  const [loading, setLoading] = useState(false);
+  const [processed, setProcessed] = useState(0);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setProcessed(0);
+    const { success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      for (let i = 1; i <= EVENTS.length; i++) {
+        await new Promise(r => setTimeout(r, 450));
+        setProcessed(i);
+      }
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="📡 Clasificador — Discriminated Unions · never" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="📡 PROCESAR EVENTOS" />
+      </div>
+    </>}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 8px', height: '100%', justifyContent: 'center' }}>
+        {EVENTS.map((ev, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8,
+            border: `1px solid ${processed > i ? ev.color : C.border}`,
+            background: processed > i ? `${ev.color}14` : C.bgTer,
+            opacity: processed > i ? 1 : 0.35,
+            transform: processed > i ? 'translateX(0)' : 'translateX(-8px)',
+            transition: 'all 0.35s',
+          }}>
+            <span style={{ fontSize: 16 }}>{ev.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: ev.color, fontFamily: 'monospace', fontWeight: 700 }}>{ev.tipo}</div>
+              <div style={{ fontSize: 10, color: C.textSec }}>{ev.label}</div>
+            </div>
+            {processed > i && (
+              <span style={{ fontSize: 10, color: C.green }}>handled</span>
+            )}
+          </div>
+        ))}
+        {processed >= EVENTS.length && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: C.cyan, fontFamily: 'monospace' }}>
+            Switch exhaustivo: ✅ todos los casos cubiertos
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+function FaultlogMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const [loading, setLoading] = useState(false);
+  const [lines, setLines] = useState<{ text: string; color: string }[]>([]);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  function colorForLine(l: string): string {
+    if (l.includes('✅') || l.includes('ensamblada')) return C.green;
+    if (l.includes('ErrorEnergia') || l.includes('insuficiente') || l.includes('nivelActual')) return C.amber;
+    if (l.includes('ErrorPieza') || l.includes('inválida')) return C.red;
+    if (l.includes('Protocolo')) return C.cyan;
+    return C.textSec;
+  }
+
+  async function run() {
+    setLoading(true); setLines([]);
+    const { output, success: ok } = await onActivate();
+    setSuccess(ok);
+    for (let i = 0; i < output.length; i++) {
+      await new Promise(r => setTimeout(r, 160));
+      setLines(prev => [...prev, { text: output[i], color: colorForLine(output[i]) }]);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="⚠️ Log de Fallas — Custom Error Classes" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="⚠️ SIMULAR FALLAS" />
+      </div>
+    </>}>
+      <div style={{ flex: 1, background: '#0a0e14', borderRadius: 8, margin: '10px 8px',
+        padding: '10px 12px', fontFamily: 'monospace', fontSize: 11,
+        overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ color: '#4b5563', marginBottom: 4 }}>{'// error.log'}</div>
+        {lines.map((l, i) => (
+          <div key={i} style={{
+            color: l.color, opacity: 1,
+            animation: 'fadeSlideIn 0.2s ease-out',
+          }}>
+            {'> '}{l.text}
+          </div>
+        ))}
+        {loading && <div style={{ color: C.textSec }}>{'> '}<span style={{ animation: 'blink 1s infinite' }}>█</span></div>}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+function ResultBoardMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const [loading, setLoading] = useState(false);
+  const [okItems, setOkItems] = useState<string[]>([]);
+  const [errItems, setErrItems] = useState<string[]>([]);
+  const [done, setDone] = useState(false);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setOkItems([]); setErrItems([]); setDone(false);
+    const { output, success: ok } = await onActivate();
+    setSuccess(ok);
+    const oks = output.filter(l => l.startsWith('✅'));
+    const errs = output.filter(l => l.startsWith('❌'));
+    for (let i = 0; i < Math.max(oks.length, errs.length); i++) {
+      await new Promise(r => setTimeout(r, 300));
+      if (oks[i]) setOkItems(prev => [...prev, oks[i].replace('✅ ', '')]);
+      if (errs[i]) setErrItems(prev => [...prev, errs[i].replace('❌ ', '')]);
+    }
+    setDone(true);
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="✅ Tablero de Resultados — Result&lt;T, E&gt; Pattern" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="✅ VALIDAR LOTE" />
+      </div>
+    </>}>
+      <div style={{ display: 'flex', gap: 8, padding: '10px 8px', height: '100%' }}>
+        {/* OK column */}
+        <div style={{ flex: 1, border: `1px solid ${C.green}60`, borderRadius: 8,
+          padding: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontSize: 10, color: C.green, fontWeight: 700, fontFamily: 'monospace' }}>
+            {'{ ok: true }'}
+          </div>
+          {okItems.map((item, i) => (
+            <div key={i} style={{ fontSize: 10, color: C.green, background: '#22c55e14',
+              padding: '4px 8px', borderRadius: 5, fontFamily: 'monospace' }}>
+              ✅ {item}
+            </div>
+          ))}
+          {done && <div style={{ fontSize: 10, color: C.textSec, marginTop: 'auto' }}>
+            Aprobadas: {okItems.length}
+          </div>}
+        </div>
+        {/* ERR column */}
+        <div style={{ flex: 1, border: `1px solid ${C.red}60`, borderRadius: 8,
+          padding: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontSize: 10, color: C.red, fontWeight: 700, fontFamily: 'monospace' }}>
+            {'{ ok: false }'}
+          </div>
+          {errItems.map((item, i) => (
+            <div key={i} style={{ fontSize: 10, color: C.red, background: '#ef444414',
+              padding: '4px 8px', borderRadius: 5, fontFamily: 'monospace' }}>
+              ❌ {item}
+            </div>
+          ))}
+          {done && <div style={{ fontSize: 10, color: C.textSec, marginTop: 'auto' }}>
+            Rechazadas: {errItems.length}
+          </div>}
+        </div>
+      </div>
+      {done && (
+        <div style={{ textAlign: 'center', fontSize: 11, color: C.cyan, fontFamily: 'monospace', padding: '0 8px 8px' }}>
+          Result&lt;T,E&gt; pattern: sin excepciones ✅
+        </div>
+      )}
+    </MechanicWrapper>
+  );
+}
+
+function FactoryCompleteMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const MODULES = [
+    { label: 'Generics',      emoji: '⚗️', color: C.purple  },
+    { label: 'Clases',        emoji: '🤖', color: C.cyan    },
+    { label: 'Utility Types', emoji: '🔍', color: C.amber   },
+    { label: 'Async/Result',  emoji: '⚡', color: C.green   },
+  ];
+  const [loading, setLoading] = useState(false);
+  const [lit, setLit] = useState(0);
+  const [celebrating, setCelebrating] = useState(false);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setLit(0); setCelebrating(false);
+    const { success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      for (let i = 1; i <= MODULES.length; i++) {
+        await new Promise(r => setTimeout(r, 500));
+        setLit(i);
+      }
+      await new Promise(r => setTimeout(r, 300));
+      setCelebrating(true);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="🏭 Fábrica Olympus — Sistema Completo" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="🏭 ACTIVAR FÁBRICA" />
+      </div>
+    </>}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', height: '100%', gap: 12, padding: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%' }}>
+          {MODULES.map((m, i) => (
+            <div key={i} style={{
+              padding: '12px 8px', borderRadius: 10, textAlign: 'center',
+              border: `2px solid ${lit > i ? m.color : C.border}`,
+              background: lit > i ? `${m.color}1a` : C.bgTer,
+              boxShadow: lit > i ? `0 0 16px ${m.color}40` : 'none',
+              transition: 'all 0.5s',
+            }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>{m.emoji}</div>
+              <div style={{ fontSize: 10, color: lit > i ? m.color : C.textSec,
+                fontWeight: 700, fontFamily: 'monospace' }}>
+                {m.label}
+              </div>
+            </div>
+          ))}
+        </div>
+        {celebrating && (
+          <div style={{ textAlign: 'center', animation: 'fadeSlideIn 0.5s ease-out' }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#f59e0b',
+              fontFamily: 'monospace', marginBottom: 4 }}>
+              🏆 TypeScript Quest completado
+            </div>
+            <div style={{ fontSize: 12, color: C.cyan, fontFamily: 'monospace' }}>
+              🎓 Certificado: TypeScript Master
+            </div>
+            <div style={{ fontSize: 20, marginTop: 6 }}>🎉 🎊 🎉</div>
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
 // ─── Main export ───────────────────────────────────────────────────────────────
 export interface MechanicCanvasProps {
   mechanic:       LevelMechanic;
@@ -1971,6 +2502,14 @@ export default function MechanicCanvas({ mechanic, stampsRequired, stampedCount,
     case 'bar-sort':        return <BarSortMechanic         {...props} />;
     case 'maze':            return <MazeMechanic            {...props} />;
     case 'parallel':        return <ParallelMechanic        {...props} />;
+    case 'inspector':       return <InspectorMechanic       {...props} />;
+    case 'catalog':         return <CatalogMechanic         {...props} />;
+    case 'transformer':     return <TransformerMechanic     {...props} />;
+    case 'narrower':        return <NarrowerMechanic        {...props} />;
+    case 'switcher':        return <SwitcherMechanic        {...props} />;
+    case 'faultlog':        return <FaultlogMechanic        {...props} />;
+    case 'result-board':    return <ResultBoardMechanic     {...props} />;
+    case 'factory-complete':return <FactoryCompleteMechanic {...props} />;
     default:                return null; // 'speech' uses FactoryCanvas
   }
 }
