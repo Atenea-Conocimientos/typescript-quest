@@ -53,6 +53,19 @@ console.log(\`Stringify activo: \${robotStr.activo} (type: \${typeof robotStr.ac
 console.log(\`Es numerico number: si\`)
 console.log(\`Es numerico string: no\`)
 console.log(\`Campos transformados: \${Object.keys(robotNullable).length}\`)`,
+  codeHints: [
+    'type Nullable<T> = { [K in keyof T]: T[K] | null }',
+    'type Stringify<T> = { [K in keyof T]: string }',
+    'type EsNumerico<T> = T extends number ? "si" : "no"',
+    '',
+    'const robotNullable: Nullable<RobotCore> = {',
+    '  nombre: "Olympus-2", energia: null, activo: null,',
+    '}',
+    '',
+    'console.log(`Nullable energia: ${robotNullable.energia}`)',
+    'console.log(`Es numerico number: si`)',
+    'console.log(`Es numerico string: no`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Nullable energia: null')) &&
     output.some(l => l.includes('Es numerico number: si')) &&

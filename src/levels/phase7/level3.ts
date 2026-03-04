@@ -42,6 +42,28 @@ async function turnoFinal(): Promise<void> {
 }
 
 await turnoFinal()`,
+  codeHints: [
+    'async function procesarTarea(nombre: string, ms: number): Promise<string> {',
+    '  await new Promise(r => setTimeout(r, ms))',
+    '  return `✅ ${nombre} completado`',
+    '}',
+    '',
+    'async function turnoFinal(): Promise<void> {',
+    '  console.log("🏭 Iniciando turno multi-robot...")',
+    '  try {',
+    '    const resultados = await Promise.all([',
+    '      procesarTarea("Ensamblado", 50),',
+    '      procesarTarea("Pintado", 80),',
+    '      procesarTarea("Control QA", 30),',
+    '      procesarTarea("Despacho", 100),',
+    '    ])',
+    '    resultados.forEach(r => console.log(r))',
+    '    console.log("✅ Turno cerrado.")',
+    '  } catch (error) { console.error("Robot falló:", error) }',
+    '}',
+    '',
+    'await turnoFinal()',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Turno cerrado')) &&
     output.filter(l => l.includes('completado')).length >= 4,

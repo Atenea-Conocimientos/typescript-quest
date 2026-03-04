@@ -11,6 +11,10 @@ const level1: Level = {
   starterCode: `// Hacé que el robot diga "PERNO LISTO"
 console.log("???")`,
   solution: `console.log("PERNO LISTO")`,
+  codeHints: [
+    '// Usá console.log() para imprimir',
+    'console.log("PERNO LISTO")',
+  ],
   validate: (output: string[]) => output.some((line) => line.includes('PERNO LISTO')),
   lesson: {
     explanation: 'console.log() es el micrófono del robot: todo lo que ponés entre paréntesis se transmite a la pantalla de la fábrica. Es la primera instrucción que vas a usar en cualquier programa TypeScript y la que más vas a ver en tus tests de automatización.',

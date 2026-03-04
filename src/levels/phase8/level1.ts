@@ -69,6 +69,21 @@ console.log(\`Campos publicos: \${camposPublicos}\`)
 console.log(\`Robot sin codigo: \${sinCodigo.nombre} (\${sinCodigo.modelo})\`)
 console.log(\`Borrador valido: \${borrador.nombre !== undefined}\`)
 console.log(JSON.stringify(publico))`,
+  codeHints: [
+    'type RobotPublico = Pick<Robot, "nombre" | "modelo">',
+    'type RobotSinCodigo = Omit<Robot, "codigoInterno">',
+    'type RobotBorrador = Partial<Robot>',
+    '',
+    'const publico: RobotPublico = { nombre: robotBase.nombre, modelo: robotBase.modelo }',
+    'const sinCodigo: RobotSinCodigo = {',
+    '  nombre: robotBase.nombre, modelo: robotBase.modelo,',
+    '  energia: robotBase.energia, piezas: robotBase.piezas',
+    '}',
+    'const borrador: RobotBorrador = { nombre: "Olympus-Draft" }',
+    '',
+    'console.log(`Campos publicos: ${Object.keys(publico).length}`)',
+    'console.log(`Borrador valido: ${borrador.nombre !== undefined}`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Campos publicos: 2')) &&
     output.some(l => l.includes('Borrador valido: true')),

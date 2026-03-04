@@ -60,6 +60,32 @@ lote.forEach(p => console.log(procesarPieza(p)))
 console.log(identificar('hola'))
 console.log(identificar(42))
 console.log(\`Escaneadas: \${lote.length} piezas\`)`,
+  codeHints: [
+    'class PiezaMetal {',
+    '  tipo = "metal" as const',
+    '  constructor(public peso: number) {}',
+    '}',
+    'class PiezaElectronica {',
+    '  tipo = "electronica" as const',
+    '  constructor(public voltaje: number) {}',
+    '}',
+    '',
+    'function esMetal(p: PiezaMetal | PiezaElectronica): p is PiezaMetal {',
+    '  return p instanceof PiezaMetal',
+    '}',
+    '',
+    'function procesarPieza(p: PiezaMetal | PiezaElectronica): string {',
+    '  if (esMetal(p)) return `Metal: ${p.peso}kg`',
+    '  return `Electronica: ${p.voltaje}V`',
+    '}',
+    '',
+    'const lote: (PiezaMetal | PiezaElectronica)[] = [',
+    '  new PiezaMetal(2.5), new PiezaElectronica(12),',
+    '  new PiezaMetal(0.8), new PiezaElectronica(5),',
+    ']',
+    'lote.forEach(p => console.log(procesarPieza(p)))',
+    'console.log(`Escaneadas: ${lote.length} piezas`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Metal:')) &&
     output.some(l => l.includes('Electronica:')) &&

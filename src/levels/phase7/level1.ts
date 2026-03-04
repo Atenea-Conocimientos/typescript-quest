@@ -66,6 +66,27 @@ const ordenados = [...pedidos].sort((a, b) =>
 )
 
 ordenados.forEach(p => console.log(\`Pedido #\${p.id} prioridad=\${p.prioridad} peso=\${p.peso}kg\`))`,
+  codeHints: [
+    'function bubbleSort(arr: number[]): number[] {',
+    '  const copia = [...arr]',
+    '  for (let i = 0; i < copia.length - 1; i++) {',
+    '    for (let j = 0; j < copia.length - i - 1; j++) {',
+    '      if (copia[j] > copia[j + 1]) {',
+    '        [copia[j], copia[j + 1]] = [copia[j + 1], copia[j]]',
+    '      }',
+    '    }',
+    '  }',
+    '  return copia',
+    '}',
+    '',
+    'const nums = bubbleSort([64, 34, 25, 12, 22, 11, 90])',
+    'console.log(`Ordenado: [${nums.join(", ")}]`)',
+    '',
+    'const ordenados = [...pedidos].sort((a, b) =>',
+    '  a.prioridad !== b.prioridad ? a.prioridad - b.prioridad : b.peso - a.peso',
+    ')',
+    'ordenados.forEach(p => console.log(`Pedido #${p.id} prioridad=${p.prioridad} peso=${p.peso}kg`))',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Ordenado:') && l.includes('11')) &&
     output.some(l => l.includes('Pedido #')),

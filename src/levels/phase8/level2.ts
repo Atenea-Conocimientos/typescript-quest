@@ -57,6 +57,23 @@ const campos: CampoPieza[] = ['nombre', 'codigo', 'peso', 'disponible']
 console.log(\`Campos de Pieza: \${campos.join(', ')}\`)
 console.log(\`Tipo retorno: number\`)
 console.log(\`Total productos: \${Object.keys(catalogoFijo).length}\`)`,
+  codeHints: [
+    'type Inventario = Record<string, number>',
+    'type CampoPieza = keyof Pieza',
+    '',
+    'const catalogoFijo: Readonly<Inventario> = {',
+    '  pernos: 500, tuercas: 320, arandelas: 150, engranajes: 45,',
+    '}',
+    '',
+    'function obtenerStock(nombre: string): number {',
+    '  return catalogoFijo[nombre] ?? 0',
+    '}',
+    '',
+    'type ResultadoStock = ReturnType<typeof obtenerStock>',
+    '',
+    'console.log(`Stock pernos: ${obtenerStock("pernos")}`)',
+    'console.log(`Tipo retorno: number`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Stock pernos: 500')) &&
     output.some(l => l.includes('Tipo retorno: number')),

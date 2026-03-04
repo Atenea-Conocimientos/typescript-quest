@@ -46,6 +46,26 @@ console.log(\`Caja Principal: \${deposito.piezas} piezas directas\`)
 console.log(\`Caja A: \${deposito.subcajas[0].piezas} piezas\`)
 console.log(\`Caja B: \${deposito.subcajas[1].piezas} piezas\`)
 console.log(\`Total piezas: \${contarTotal(deposito)}\`)`,
+  codeHints: [
+    'interface Caja {',
+    '  nombre: string; piezas: number; subcajas?: Caja[]',
+    '}',
+    '',
+    'function contarTotal(caja: Caja): number {',
+    '  if (!caja.subcajas) return caja.piezas',
+    '  return caja.piezas + caja.subcajas.reduce((acc, sub) => acc + contarTotal(sub), 0)',
+    '}',
+    '',
+    'const deposito: Caja = {',
+    '  nombre: "Principal", piezas: 10,',
+    '  subcajas: [',
+    '    { nombre: "A", piezas: 50, subcajas: [{ nombre: "A1", piezas: 20 }] },',
+    '    { nombre: "B", piezas: 30 },',
+    '  ]',
+    '}',
+    '',
+    'console.log(`Total piezas: ${contarTotal(deposito)}`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Total piezas: 110')),
   lesson: {

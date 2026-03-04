@@ -17,6 +17,12 @@ console.log(\`Robot: ??? | Velocidad: ???\`)`,
   solution: `const nombre = "Olympus"
 const velocidad = 100
 console.log(\`Robot: \${nombre} | Velocidad: \${velocidad}\`)`,
+  codeHints: [
+    'const nombre = "Olympus"',
+    'const velocidad = 100',
+    '// Usá backticks ` y ${} para insertar variables',
+    'console.log(`Robot: ${nombre} | Velocidad: ${velocidad}`)',
+  ],
   validate: (output: string[]) =>
     output.some((line) =>
       line.includes('Robot:') && line.includes('Olympus') && line.includes('100')

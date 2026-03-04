@@ -53,6 +53,32 @@ eventos.forEach(e => console.log(procesarEvento(e)))
 const fallasCriticas = eventos.filter(e => e.tipo === 'falla' && e.critica).length
 console.log(\`Eventos procesados: \${eventos.length}\`)
 console.log(\`Fallas criticas: \${fallasCriticas}\`)`,
+  codeHints: [
+    'type EventoFabrica =',
+    '  | { tipo: "produccion"; cantidad: number; linea: string }',
+    '  | { tipo: "falla"; codigo: string; critica: boolean }',
+    '  | { tipo: "mantenimiento"; duracionMin: number }',
+    '',
+    'function procesarEvento(e: EventoFabrica): string {',
+    '  switch (e.tipo) {',
+    '    case "produccion": return `✅ Producción: ${e.cantidad} piezas en línea ${e.linea}`',
+    '    case "falla": return `⚠️ Falla [${e.codigo}]${e.critica ? " — CRÍTICA" : ""}`',
+    '    case "mantenimiento": return `🔧 Mantenimiento: ${e.duracionMin} minutos`',
+    '    default: const _exhaustive: never = e; return _exhaustive',
+    '  }',
+    '}',
+    '',
+    'const eventos: EventoFabrica[] = [',
+    '  { tipo: "produccion", cantidad: 150, linea: "A" },',
+    '  { tipo: "falla", codigo: "ERR-042", critica: true },',
+    '  { tipo: "mantenimiento", duracionMin: 30 },',
+    '  { tipo: "falla", codigo: "WARN-007", critica: false },',
+    ']',
+    'eventos.forEach(e => console.log(procesarEvento(e)))',
+    'const fallasCriticas = eventos.filter(e => e.tipo === "falla" && e.critica).length',
+    'console.log(`Eventos procesados: ${eventos.length}`)',
+    'console.log(`Fallas criticas: ${fallasCriticas}`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Eventos procesados: 4')) &&
     output.some(l => l.includes('Fallas criticas: 1')),

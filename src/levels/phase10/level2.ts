@@ -66,6 +66,31 @@ for (const [nombre, peso] of pruebas) {
 }
 
 console.log(\`Aprobadas: \${aprobadas} / Rechazadas: \${rechazadas}\`)`,
+  codeHints: [
+    'type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }',
+    '',
+    'function ok<T>(value: T): Result<T, never> { return { ok: true, value } }',
+    'function err<E>(error: E): Result<never, E> { return { ok: false, error } }',
+    '',
+    'function validarPieza(nombre: string, peso: number): Result<InformeCalidad, string> {',
+    '  if (!nombre.trim()) return err("Nombre requerido")',
+    '  if (peso <= 0) return err(`Peso inválido: ${peso}`)',
+    '  if (peso > 100) return err(`Pieza demasiado pesada: ${peso}kg`)',
+    '  return ok({ pieza: nombre, peso, aprobada: true })',
+    '}',
+    '',
+    'for (const [nombre, peso] of pruebas) {',
+    '  const resultado = validarPieza(nombre, peso)',
+    '  if (resultado.ok) {',
+    '    console.log(`✅ ${resultado.value.pieza} (${resultado.value.peso}kg}`)',
+    '    aprobadas++',
+    '  } else {',
+    '    console.log(`❌ ${resultado.error}`)',
+    '    rechazadas++',
+    '  }',
+    '}',
+    'console.log(`Aprobadas: ${aprobadas} / Rechazadas: ${rechazadas}`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('✅')) &&
     output.some(l => l.includes('❌')) &&

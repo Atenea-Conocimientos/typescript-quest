@@ -18,6 +18,11 @@ console.log(fabrica + ": " + pernos + " pernos")`,
   solution: `const fabrica = "Olympus"
 let pernos = 5
 console.log(fabrica + ": " + pernos + " pernos")`,
+  codeHints: [
+    'const fabrica = "Olympus"',
+    'let pernos = 5',
+    'console.log(fabrica + ": " + pernos + " pernos")',
+  ],
   validate: (output: string[]) =>
     output.some((line) => line.includes('Olympus') && line.includes('5')),
   lesson: {

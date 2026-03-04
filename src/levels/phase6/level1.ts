@@ -66,6 +66,25 @@ console.log(\`Caja: \${cajaProducto.etiqueta} → \${cajaProducto.contenido.nomb
 const deposito = almacenar(cajaPernos, [])
 console.log(\`Primero del depósito: \${primero(deposito)?.etiqueta}\`)
 console.log(\`Cajas totales: \${deposito.length}\`)`,
+  codeHints: [
+    'function almacenar<T>(item: T, deposito: T[]): T[] {',
+    '  return [...deposito, item]',
+    '}',
+    '',
+    'interface Caja<T> {',
+    '  contenido: T; etiqueta: string; sellada: boolean',
+    '}',
+    '',
+    'const cajaPernos: Caja<number> = { contenido: 500, etiqueta: "Pernos M6", sellada: true }',
+    'const cajaProducto: Caja<Producto> = { contenido: catalogo[0], etiqueta: "QA OK", sellada: false }',
+    '',
+    'function primero<T>(lista: T[]): T | undefined { return lista[0] }',
+    '',
+    'console.log(`Caja: ${cajaPernos.etiqueta} → ${cajaPernos.contenido}`)',
+    'console.log(`Caja: ${cajaProducto.etiqueta} → ${cajaProducto.contenido.nombre}`)',
+    'const deposito = almacenar(cajaPernos, [])',
+    'console.log(`Primero del depósito: ${primero(deposito)?.etiqueta}`)',
+  ],
   validate: (output: string[]) =>
     output.some(l => l.includes('Caja:')) &&
     output.some(l => l.includes('Primero del depósito:')),

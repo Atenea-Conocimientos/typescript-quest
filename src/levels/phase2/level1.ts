@@ -32,6 +32,17 @@ let pasoQA: boolean = false
 
 console.log(\`Material: \${material} | Activa: \${activa}\`)
 console.log(\`Tornillos: \${tornillos} | Temp: \${temp}°C | QA: \${pasoQA}\`)`,
+  codeHints: [
+    'let tornillos: number = 500',
+    'const material: string = "acero inoxidable"',
+    'let activa: boolean = true',
+    'const temp: number = 320.5',
+    'const codigoPieza: string = "P-001"',
+    'let pasoQA: boolean = false',
+    '',
+    'console.log(`Material: ${material} | Activa: ${activa}`)',
+    'console.log(`Tornillos: ${tornillos} | Temp: ${temp}°C | QA: ${pasoQA}`)',
+  ],
   validate: (output: string[]) => {
     const linea1 = output.some((l) => l.includes('Material:') && l.includes('acero inoxidable') && l.includes('Activa:'));
     const linea2 = output.some((l) => l.includes('Tornillos:') && l.includes('500') && l.includes('Temp:'));
