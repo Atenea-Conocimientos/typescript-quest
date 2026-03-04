@@ -194,20 +194,21 @@ export default function GameScreen() {
               🏭 <strong style={{ color: 'var(--text-primary)' }}>Fábrica Olympus</strong>
             </span>
             <div style={{ flex: 1 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, overflowX: 'auto', flexShrink: 1 }}>
             {ALL_LEVELS.map((l, i) => {
               const prevLevel = ALL_LEVELS[i - 1];
               const phaseBreak = i > 0 && l.phase !== prevLevel?.phase;
               return (
-                <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
                   {phaseBreak && (
-                    <div style={{ width: 1, height: 16, background: 'var(--border)', marginRight: 2 }} />
+                    <div style={{ width: 1, height: 14, background: 'var(--border)', marginRight: 1 }} />
                   )}
                   <button
                     onClick={() => handleLevelChange(l.id)}
-                    title={`F${l.phase} · ${l.title}`}
+                    title={`Fase ${l.phase} · ${l.title}`}
                     style={{
-                      width: 26, height: 26, borderRadius: '50%', border: 'none', fontSize: 11,
-                      fontWeight: 700, cursor: 'pointer',
+                      width: 22, height: 22, borderRadius: '50%', border: 'none', fontSize: 10,
+                      fontWeight: 700, cursor: 'pointer', flexShrink: 0,
                       background: l.id === currentLevelId ? 'var(--purple)' :
                         completedLevels.has(l.id) ? '#22c55e33' : 'var(--bg-primary)',
                       color: l.id === currentLevelId ? 'white' :
@@ -221,6 +222,7 @@ export default function GameScreen() {
                 </div>
               );
             })}
+            </div>
           </div>
 
           {/* Canvas area */}

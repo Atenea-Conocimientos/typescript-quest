@@ -69,8 +69,16 @@ ordenados.forEach(p => console.log(\`Pedido #\${p.id} prioridad=\${p.prioridad} 
   validate: (output: string[]) =>
     output.some(l => l.includes('Ordenado:') && l.includes('11')) &&
     output.some(l => l.includes('Pedido #')),
-  stampsRequired: 1,
+  stampsRequired: 5,
   mechanic: 'bar-sort' as const,
+
+  // Curriculum
+  subtitle: 'sorting.ts — El robot debe ordenar lotes de producción por prioridad crítica',
+  module: 6,
+  moduleName: 'Boss Stages: Algoritmos Reales',
+  metaphor: 'La línea de despacho necesita ordenar pedidos por prioridad: primero los urgentes, luego por fecha, luego por peso. El robot implementa primero sorting manual (Bubble Sort) para entender el concepto, luego usa Array.sort() con función comparadora custom.',
+  concepts: 'Implementar Bubble Sort manualmente · Array.sort((a, b) => ...) con comparador tipado · Ordenar por múltiples criterios (multi-sort) · Ordenar array de objetos por propiedad',
+  unlocks: ['Línea de despacho', 'Fase 18'],
 };
 
 export default level17;

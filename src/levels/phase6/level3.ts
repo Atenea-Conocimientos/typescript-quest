@@ -48,8 +48,16 @@ console.log(\`Caja B: \${deposito.subcajas[1].piezas} piezas\`)
 console.log(\`Total piezas: \${contarTotal(deposito)}\`)`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Total piezas: 110')),
-  stampsRequired: 1,
+  stampsRequired: 5,
   mechanic: 'recursion-tree' as const,
+
+  // Curriculum
+  subtitle: 'recursion.ts — El robot busca piezas en estantes anidados dentro de estantes',
+  module: 5,
+  moduleName: 'Patrones Avanzados',
+  metaphor: 'El depósito tiene cajas dentro de cajas: una caja contiene piezas sueltas y otras sub-cajas, que a su vez tienen más. El robot debe contar TODAS las piezas sin importar cuántos niveles de profundidad haya. No puede saber de antemano cuántos niveles hay.',
+  concepts: 'Función recursiva que se llama a sí misma · Caso base que detiene la recursión · Call stack · Tipo recursivo: interface Nodo { valor: number; hijos?: Nodo[] } · Diferencia con loop iterativo',
+  unlocks: ['Inventario profundo', 'Módulo Boss'],
 };
 
 export default level16;

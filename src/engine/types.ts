@@ -44,6 +44,20 @@ export interface Level {
   validate: (output: string[]) => boolean;
   stampsRequired?: number;
   mechanic: LevelMechanic;
+
+  // ── Curriculum metadata (optional, used for course display) ──────────────
+  /** Short subtitle shown below the title (e.g. "generics.ts — ...") */
+  subtitle?: string;
+  /** Module number within the course (e.g. 5) */
+  module?: number;
+  /** Module display name (e.g. "Patrones Avanzados") */
+  moduleName?: string;
+  /** Factory metaphor explaining the concept in context */
+  metaphor?: string;
+  /** Comma-separated list of sub-concepts taught in this level */
+  concepts?: string;
+  /** Achievements/features unlocked on completion */
+  unlocks?: string[];
 }
 
 export interface GameState {

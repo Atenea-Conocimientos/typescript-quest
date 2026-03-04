@@ -69,8 +69,16 @@ console.log(\`Cajas totales: \${deposito.length}\`)`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Caja:')) &&
     output.some(l => l.includes('Primero del depósito:')),
-  stampsRequired: 1,
+  stampsRequired: 5,
   mechanic: 'forge' as const,
+
+  // Curriculum
+  subtitle: 'generics.ts — Un sistema de almacenamiento que funciona para cualquier tipo de pieza',
+  module: 5,
+  moduleName: 'Patrones Avanzados',
+  metaphor: 'El almacén necesita un sistema de estanterías universal: no importa si guarda pernos, circuitos o ruedas — el sistema funciona igual. Los generics permiten construir funciones y clases que son type-safe para cualquier tipo sin duplicar código.',
+  concepts: 'function fn<T>(param: T): T · Inferencia del tipo genérico · Múltiples parámetros <T, K> · Restricción <T extends object> · Interfaces genéricas · Por qué no usar any',
+  unlocks: ['Almacén universal', 'Reutilización máxima'],
 };
 
 export default level14;

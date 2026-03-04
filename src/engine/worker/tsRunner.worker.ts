@@ -55,9 +55,11 @@ self.onmessage = async (event: MessageEvent<{ code: string; id: string }>) => {
 
     const jsCode = result.code;
 
-    // Create sandboxed eval with captured console.log
+    // Create sandboxed eval with captured console.log.
+    // Uses AsyncFunction so async/await and top-level `await` work correctly
+    // (e.g. `await turnoFinal()` at the top level of user code).
     const sandboxCode = `
-      (function(console) {
+      return (async function(console) {
         ${jsCode}
       })({
         log: (...args) => __captureLog(...args),
@@ -66,11 +68,13 @@ self.onmessage = async (event: MessageEvent<{ code: string; id: string }>) => {
       });
     `;
 
-    const fn = new Function('__captureLog', sandboxCode);
+    // AsyncFunction constructor supports async/await inside the body
+    const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor as FunctionConstructor;
+    const fn = new AsyncFunction('__captureLog', sandboxCode);
     const captureLog = (...args: unknown[]) => {
       output.push(args.map(String).join(' '));
     };
-    fn(captureLog);
+    await fn(captureLog);
 
     const duration = Date.now() - startTime;
     self.postMessage({ id, success: true, output, duration });

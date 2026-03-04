@@ -71,8 +71,16 @@ if (resultado) {
 }`,
   validate: (output: string[]) =>
     output.some(l => l.toLowerCase().includes('camino encontrado')),
-  stampsRequired: 1,
+  stampsRequired: 5,
   mechanic: 'maze' as const,
+
+  // Curriculum
+  subtitle: 'laberinto.ts — Un envío urgente está perdido en el depósito. El robot debe encontrarlo.',
+  module: 6,
+  moduleName: 'Boss Stages: Algoritmos Reales',
+  metaphor: 'El almacén es una grilla de pasillos y paredes. Un envío urgente está escondido en algún lugar. El robot debe navegar los pasillos disponibles para encontrarlo. Implementar DFS: avanzar hasta bloquearse, retroceder, intentar otro camino.',
+  concepts: 'Representar grafo con interfaces tipadas · DFS iterativo con Stack (array como pila) · Set<string> para visitados · type Posicion = [number, number] · Aplicar interfaces, generics, arrays, funciones, clases juntos',
+  unlocks: ['Navegación autónoma', 'Fase 19 (Final)'],
 };
 
 export default level18;

@@ -72,8 +72,16 @@ console.log(\`Total piezas: \${r1.piezas + r2.piezas}\`)`,
   validate: (output: string[]) =>
     output.some(l => /\[.+\] ⚡\d+ 🔩\d+/.test(l)) &&
     output.some(l => l.includes('Total piezas:')),
-  stampsRequired: 1,
+  stampsRequired: 5,
   mechanic: 'blueprint' as const,
+
+  // Curriculum
+  subtitle: 'robot-oop.ts — El robot se programa a sí mismo con orientación a objetos',
+  module: 5,
+  moduleName: 'Patrones Avanzados',
+  metaphor: 'La fábrica tiene varios modelos de robot. Cada uno tiene sus propias características (nombre, energía, piezas producidas) y puede hacer cosas (moverse, ensamblar, recargar). Una clase es el plano del robot — cada instancia es un robot real en el piso de fábrica.',
+  concepts: 'class · constructor · modificadores public/private/readonly · Métodos de instancia · this · Herencia con extends · super() · Getters/setters · Instanciar con new',
+  unlocks: ['Robot modular', 'Flota de robots'],
 };
 
 export default level15;
