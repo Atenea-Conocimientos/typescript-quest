@@ -12,7 +12,7 @@ const level1: Level = {
 console.log("???")`,
   solution: `console.log("PERNO LISTO")`,
   validate: (output: string[]) => output.some((line) => line.includes('PERNO LISTO')),
-  stampsRequired: 5,
+  stampsRequired: 2,
   mechanic: 'speech' as const,
 };
 
