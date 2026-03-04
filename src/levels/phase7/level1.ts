@@ -69,6 +69,38 @@ ordenados.forEach(p => console.log(\`Pedido #\${p.id} prioridad=\${p.prioridad} 
   validate: (output: string[]) =>
     output.some(l => l.includes('Ordenado:') && l.includes('11')) &&
     output.some(l => l.includes('Pedido #')),
+  lesson: {
+    explanation: 'Sorting es ordenar elementos según un criterio. Bubble Sort es el algoritmo más simple para entender el concepto de intercambios. Array.sort() es la implementación nativa — con una función comparadora podés ordenar por cualquier propiedad, incluso por múltiples criterios.',
+    codeExample: `// Bubble Sort manual (para entender el concepto)
+function bubbleSort(arr: number[]): number[] {
+  const copia = [...arr]
+  for (let i = 0; i < copia.length - 1; i++) {
+    for (let j = 0; j < copia.length - i - 1; j++) {
+      if (copia[j] > copia[j + 1]) {
+        [copia[j], copia[j+1]] = [copia[j+1], copia[j]]
+      }
+    }
+  }
+  return copia
+}
+
+// Array.sort() nativo con compareFn:
+const nums = [5, 2, 8, 1, 9]
+nums.sort((a, b) => a - b)   // ascendente: a - b
+nums.sort((a, b) => b - a)   // descendente: b - a
+
+// Multi-criterio:
+pedidos.sort((a, b) =>
+  a.prioridad !== b.prioridad
+    ? a.prioridad - b.prioridad   // primero por prioridad
+    : b.peso - a.peso             // luego por peso desc
+)`,
+    tips: [
+      'compareFn(a, b): negativo → a va antes, positivo → b va antes, 0 → igual',
+      'Siempre creá una copia con [...arr] antes de ordenar para no mutar el original',
+      'Multi-criterio: si el primer criterio es 0 (empate), aplicás el segundo',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'bar-sort' as const,
 

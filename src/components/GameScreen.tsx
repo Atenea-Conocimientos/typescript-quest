@@ -6,6 +6,7 @@ import { runCode } from '../engine/GameEngine';
 import { RunResult } from '../engine/types';
 import FactoryCanvas from './FactoryCanvas';
 import MechanicCanvas from './MechanicCanvas';
+import LessonScreen from './LessonScreen';
 import DevPanel from './DevPanel';
 
 export default function GameScreen() {
@@ -13,6 +14,7 @@ export default function GameScreen() {
   const [completedLevels, setCompletedLevels] = useState<Set<string>>(new Set());
   const [successState, setSuccessState] = useState(false);
   const [stampedCount, setStampedCount] = useState(0);
+  const [seenLessons, setSeenLessons] = useState<Set<string>>(new Set());
 
   // Last run output — shared between EditorPanel (Deploy) and canvas mechanics
   const [lastOutput, setLastOutput]   = useState<string[]>([]);
@@ -23,6 +25,17 @@ export default function GameScreen() {
   const level = LEVELS_BY_ID[currentLevelId];
   const stampsRequired = level.stampsRequired ?? 0;
   const usesPhaser = level.mechanic === 'speech';
+
+  // Show lesson screen when: level has lesson, hasn't been seen, and isn't already completed
+  const showLesson = !!(
+    level.lesson &&
+    !seenLessons.has(currentLevelId) &&
+    !completedLevels.has(currentLevelId)
+  );
+
+  function handleLessonDone() {
+    setSeenLessons(prev => new Set([...prev, currentLevelId]));
+  }
 
   // ── Deploy button handler (EditorPanel) ──────────────────────────────────────
   function handleResult(result: RunResult) {
@@ -235,6 +248,11 @@ export default function GameScreen() {
 
           {/* Canvas area */}
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+            {/* Lesson screen — overlays canvas when level has unseen lesson */}
+            {showLesson && level.lesson && (
+              <LessonScreen level={level} onStart={handleLessonDone} />
+            )}
+
             {usesPhaser ? (
               <FactoryCanvas
                 stampsRequired={stampsRequired}

@@ -71,6 +71,36 @@ console.log(\`Sin proveedor: \${sinProv?.nombre ?? "ninguno"}\`)`,
   validate: (output: string[]) =>
     output.some((l) => l.includes('Productos filtrados: 2')) &&
     output.some((l) => l.includes('Peso total del lote: 9g')),
+  lesson: {
+    explanation: 'filter, map y reduce son los tres métodos funcionales más importantes de los arrays. filter selecciona elementos que cumplen una condición, map transforma cada elemento, reduce acumula todos en un único valor. En automatización los usás para procesar respuestas de APIs, filtrar logs y calcular métricas de tus suites.',
+    codeExample: `const productos = [
+  { nombre: "Perno",  precio: 0.5, activo: true  },
+  { nombre: "Rueda",  precio: 12,  activo: false },
+  { nombre: "Motor",  precio: 85,  activo: true  },
+]
+
+// filter: solo los activos
+const activos = productos.filter(p => p.activo)
+// → [{Perno...}, {Motor...}]
+
+// map: extraer solo los nombres
+const nombres = productos.map(p => p.nombre)
+// → ["Perno", "Rueda", "Motor"]
+
+// reduce: sumar todos los precios
+const total = productos.reduce((acc, p) => acc + p.precio, 0)
+// → 97.5
+
+// Encadenado: suma solo de activos
+const totalActivos = productos
+  .filter(p => p.activo)
+  .reduce((acc, p) => acc + p.precio, 0)  // 85.5`,
+    tips: [
+      'filter y map siempre retornan un nuevo array — no modifican el original',
+      'map retorna siempre la misma cantidad de elementos que el array original',
+      'reduce puede retornar cualquier tipo: number, string, objeto, array',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'pipeline' as const,
 };

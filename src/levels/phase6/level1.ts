@@ -69,6 +69,33 @@ console.log(\`Cajas totales: \${deposito.length}\`)`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Caja:')) &&
     output.some(l => l.includes('Primero del depósito:')),
+  lesson: {
+    explanation: 'Los generics permiten escribir funciones y clases que funcionan con cualquier tipo sin perder type safety. En vez de duplicar código para cada tipo, usás un parámetro de tipo <T> que TypeScript reemplaza automáticamente según cómo llamás la función.',
+    codeExample: `// Sin generics: necesitás una función por tipo ❌
+function guardarNumero(n: number, arr: number[]) { ... }
+function guardarString(s: string, arr: string[]) { ... }
+
+// Con generics: una función para todo ✅
+function guardar<T>(item: T, arr: T[]): T[] {
+  return [...arr, item]
+}
+
+// TypeScript infiere T automáticamente:
+guardar(42, [])          // T = number
+guardar("hola", [])      // T = string
+
+// Interface genérica:
+interface Caja<T> {
+  contenido: T
+  etiqueta: string
+}
+const caja: Caja<number> = { contenido: 500, etiqueta: "Pernos" }`,
+    tips: [
+      '<T> es el nombre convencional pero podés usar cualquiera: <Item>, <Data>',
+      'TypeScript infiere T automáticamente — no hace falta escribir fn<number>(5)',
+      'Restricciones: <T extends object> limita T a tipos que sean objetos',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'forge' as const,
 

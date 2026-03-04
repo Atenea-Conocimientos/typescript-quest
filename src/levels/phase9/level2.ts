@@ -56,6 +56,31 @@ console.log(\`Fallas criticas: \${fallasCriticas}\`)`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Eventos procesados: 4')) &&
     output.some(l => l.includes('Fallas criticas: 1')),
+  lesson: {
+    explanation: 'Las discriminated unions son union types donde cada variante tiene una propiedad "tag" con un valor literal único. TypeScript usa esa propiedad para reducir el tipo en cada case del switch. El tipo never en el default actúa como "exhaustiveness check" — si olvidás un case, el compilador te avisa.',
+    codeExample: `type Evento =
+  | { tipo: "produccion"; cantidad: number }
+  | { tipo: "falla";      codigo: string   }
+  | { tipo: "pausa";      motivo: string   }
+
+function procesar(e: Evento): string {
+  switch (e.tipo) {
+    case "produccion": return \`\${e.cantidad} piezas\`  // e: {tipo:"produccion", cantidad}
+    case "falla":      return \`Error: \${e.codigo}\`   // e: {tipo:"falla", codigo}
+    case "pausa":      return \`Pausa: \${e.motivo}\`   // e: {tipo:"pausa", motivo}
+    default:
+      const _check: never = e  // ← si falta un case, TypeScript da error acá
+      return _check
+  }
+}
+// Si agregás un 4to tipo a Evento pero olvidás el case,
+// el compilador grita antes de que llegue a producción`,
+    tips: [
+      'La propiedad discriminante debe tener un literal type único por variante',
+      'El default: never garantiza que manejes todos los casos — exhaustiveness check',
+      'Muy útil para eventos de Redux, mensajes de WebSocket, estados de una UI',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'switcher' as const,
   subtitle: 'discriminated-unions.ts — TypeScript te avisa en compilación si olvidás manejar un caso',

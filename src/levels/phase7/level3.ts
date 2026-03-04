@@ -45,6 +45,37 @@ await turnoFinal()`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Turno cerrado')) &&
     output.filter(l => l.includes('completado')).length >= 4,
+  lesson: {
+    explanation: 'async/await es la forma moderna de manejar operaciones asincrónicas. Una función async siempre retorna una Promise, y await pausa esa función hasta que la Promise resuelva — sin bloquear el resto del programa. Promise.all lanza múltiples operaciones en paralelo y espera a que todas terminen.',
+    codeExample: `async function procesarTarea(nombre: string, ms: number): Promise<string> {
+  await new Promise(r => setTimeout(r, ms))
+  return \`✅ \${nombre} completado\`
+}
+
+async function turnoFinal(): Promise<void> {
+  console.log("🏭 Iniciando...")
+
+  // ❌ Secuencial: 50+80+30+100 = 260ms total
+  // const r1 = await procesarTarea("A", 50)
+  // const r2 = await procesarTarea("B", 80)
+
+  // ✅ Paralelo: solo 100ms (el más largo)
+  const resultados = await Promise.all([
+    procesarTarea("Ensamblado", 50),
+    procesarTarea("Pintado", 80),
+    procesarTarea("Control QA", 30),
+    procesarTarea("Despacho", 100),
+  ])
+  resultados.forEach(r => console.log(r))
+}
+
+await turnoFinal()  // top-level await`,
+    tips: [
+      'async function siempre retorna Promise<T> — aunque no lo parezca',
+      'Promise.all es mucho más rápido que await en secuencia para tareas independientes',
+      'Siempre rodeá con try/catch — las Promises rechazadas son errores silenciosos',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'parallel' as const,
 

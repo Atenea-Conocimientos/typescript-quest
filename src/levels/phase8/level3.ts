@@ -57,6 +57,31 @@ console.log(\`Campos transformados: \${Object.keys(robotNullable).length}\`)`,
     output.some(l => l.includes('Nullable energia: null')) &&
     output.some(l => l.includes('Es numerico number: si')) &&
     output.some(l => l.includes('Es numerico string: no')),
+  lesson: {
+    explanation: 'Los mapped types iteran sobre las keys de una interface y transforman cada propiedad. Con { [K in keyof T]: ... } podés crear versiones derivadas de cualquier tipo automáticamente. Los tipos condicionales (T extends X ? A : B) eligen un tipo según una condición en compile time.',
+    codeExample: `// Mapped type: transforma cada propiedad
+type Nullable<T> = { [K in keyof T]: T[K] | null }
+type Stringify<T> = { [K in keyof T]: string }
+
+interface Robot { nombre: string; energia: number }
+
+// Nullable<Robot> → { nombre: string|null; energia: number|null }
+const r: Nullable<Robot> = { nombre: "X", energia: null }
+
+// Tipo condicional: elige en compile time
+type EsString<T> = T extends string ? "sí" : "no"
+type A = EsString<string>  // "sí"
+type B = EsString<number>  // "no"
+
+// Los Utility Types de TS son mapped types internamente:
+// type Partial<T> = { [K in keyof T]?: T[K] }
+// type Readonly<T> = { readonly [K in keyof T]: T[K] }`,
+    tips: [
+      '{ [K in keyof T]: T[K] } es la base de todos los utility types de TypeScript',
+      'T extends X ? A : B se evalúa en compilación, no en runtime',
+      'infer permite extraer un tipo de otro: T extends Promise<infer U> ? U : never',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'transformer' as const,
   subtitle: 'mapped-types.ts — Generá nuevas interfaces automáticamente a partir de las existentes',

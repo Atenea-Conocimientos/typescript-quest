@@ -61,6 +61,32 @@ console.log(\`Primer aprobado: \${aprobados[0].nombre}\`)`,
   validate: (output: string[]) =>
     output.some((l) => l.includes('Aprobados: 2 / 3')) &&
     output.some((l) => l.includes('Primer aprobado:')),
+  lesson: {
+    explanation: 'Una interface define la "forma" de un objeto — qué propiedades tiene y de qué tipo es cada una. Es el contrato que TypeScript usa para verificar que tus objetos tienen exactamente lo que necesitan. En automatización definís interfaces para los datos de la API, para las opciones de tus helpers, y para los modelos de datos de tus tests.',
+    codeExample: `interface Producto {
+  nombre: string
+  precio: number
+  disponible: boolean
+  proveedor?: string   // ← ? = propiedad opcional
+}
+
+// TypeScript verifica que el objeto cumpla la interface
+const perno: Producto = {
+  nombre: "Perno M6",
+  precio: 0.5,
+  disponible: true
+  // proveedor es opcional — no hace falta
+}
+
+// Error si falta una propiedad obligatoria:
+// const mal: Producto = { nombre: "X" }
+// ❌ falta 'precio' y 'disponible'`,
+    tips: [
+      '? al final del nombre hace la propiedad opcional',
+      'Las interfaces no generan código JS — solo existen para TypeScript',
+      'Usá PascalCase para nombres de interfaces: Producto, RobotConfig, ApiResponse',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'cards' as const,
 };

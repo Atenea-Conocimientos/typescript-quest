@@ -72,6 +72,34 @@ console.log(JSON.stringify(publico))`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Campos publicos: 2')) &&
     output.some(l => l.includes('Borrador valido: true')),
+  lesson: {
+    explanation: 'Pick, Omit y Partial son utility types — tipos predefinidos por TypeScript que transforman otras interfaces. Pick selecciona solo ciertas propiedades, Omit las elimina, Partial las hace todas opcionales. Evitan duplicar interfaces y mantienen el código sincronizado automáticamente.',
+    codeExample: `interface Robot {
+  nombre: string
+  modelo: string
+  energia: number
+  codigoInterno: string
+}
+
+// Pick: solo las propiedades que necesitás
+type RobotPublico = Pick<Robot, "nombre" | "modelo">
+// → { nombre: string; modelo: string }
+
+// Omit: todo excepto lo que excluís
+type RobotSinCodigo = Omit<Robot, "codigoInterno">
+// → { nombre, modelo, energia }
+
+// Partial: todas las propiedades opcionales
+type RobotBorrador = Partial<Robot>
+// → { nombre?: string; modelo?: string; ... }
+
+const borrador: RobotBorrador = { nombre: "Prototipo" }  // ✅`,
+    tips: [
+      'Pick y Omit son opuestos — elegí el que require menos teclear',
+      'Partial es muy útil para objetos de configuración y updates parciales',
+      'Estos tipos se actualizan automáticamente si cambiás la interface original',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'inspector' as const,
   subtitle: 'utility-types.ts — Recortá y adaptá interfaces existentes sin duplicar código',

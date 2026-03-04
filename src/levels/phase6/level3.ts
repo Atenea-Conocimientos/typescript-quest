@@ -48,6 +48,32 @@ console.log(\`Caja B: \${deposito.subcajas[1].piezas} piezas\`)
 console.log(\`Total piezas: \${contarTotal(deposito)}\`)`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Total piezas: 110')),
+  lesson: {
+    explanation: 'Una función recursiva se llama a sí misma para resolver un problema dividiéndolo en subproblemas más pequeños. Siempre necesita un caso base (cuándo parar) y un caso recursivo (cómo dividir el problema). Es la herramienta natural para estructuras anidadas como árboles y directorios.',
+    codeExample: `interface Caja {
+  nombre: string
+  piezas: number
+  subcajas?: Caja[]  // tipo recursivo — Caja contiene Cajas
+}
+
+function contarTotal(caja: Caja): number {
+  // Caso base: sin sub-cajas, retorná solo las propias
+  if (!caja.subcajas) return caja.piezas
+
+  // Caso recursivo: propias + suma de cada sub-caja
+  return caja.piezas +
+    caja.subcajas.reduce((acc, sub) => acc + contarTotal(sub), 0)
+}
+
+// Árbol: Principal(10) → A(50) → A1(20)
+//                       → B(30)
+// Total: 10 + 50 + 20 + 30 = 110`,
+    tips: [
+      'Siempre identificá el caso base primero — es lo que detiene la recursión',
+      'Cada llamada recursiva debe acercarse al caso base (subproblema más pequeño)',
+      'El call stack acumula llamadas — demasiada profundidad causa Stack Overflow',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'recursion-tree' as const,
 

@@ -37,6 +37,30 @@ console.log(\`Tornillos: \${tornillos} | Temp: \${temp}°C | QA: \${pasoQA}\`)`,
     const linea2 = output.some((l) => l.includes('Tornillos:') && l.includes('500') && l.includes('Temp:'));
     return linea1 && linea2;
   },
+  lesson: {
+    explanation: 'TypeScript te permite declarar el tipo de cada variable: number, string, boolean. Esto le dice al compilador qué tipo de dato se espera — si intentás asignar algo incorrecto, el error aparece antes de ejecutar el código. En automatización esto evita bugs silenciosos donde "5" (string) se cuela donde esperabas 5 (number).',
+    codeExample: `// Anotación de tipo: nombre: tipo = valor
+let temperatura: number = 320.5
+const material: string = "acero inoxidable"
+let activa: boolean = true
+
+// TypeScript detecta errores en compilación, no en runtime:
+// temperatura = "caliente"  // ❌ Error: string no es number
+
+// Sin anotación también funciona — TypeScript infiere:
+const codigo = "P-001"   // infiere: string
+let contador = 0          // infiere: number
+
+// En funciones: tipá los parámetros
+function duplicar(x: number): number {
+  return x * 2
+}`,
+    tips: [
+      'number para enteros y decimales, string para texto, boolean para true/false',
+      'El compilador detecta errores de tipo ANTES de ejecutar — no en runtime',
+      'TypeScript puede inferir el tipo sin que lo escribas (pero es buena práctica ser explícito)',
+    ],
+  },
   stampsRequired: 3,
   mechanic: 'scanner' as const,
 };

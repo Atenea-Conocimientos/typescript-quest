@@ -60,6 +60,31 @@ console.log(\`Total productos: \${Object.keys(catalogoFijo).length}\`)`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Stock pernos: 500')) &&
     output.some(l => l.includes('Tipo retorno: number')),
+  lesson: {
+    explanation: 'Record<K, V> crea un tipo de objeto con claves de tipo K y valores de tipo V — es la forma tipada de un diccionario. Readonly<T> envuelve cualquier tipo y hace todas sus propiedades de solo lectura. keyof T extrae las claves de una interface como union type.',
+    codeExample: `// Record: diccionario tipado
+type Inventario = Record<string, number>
+const stock: Inventario = { pernos: 500, tuercas: 320 }
+
+// Readonly: no se puede modificar en runtime
+const config: Readonly<Inventario> = { timeout: 5000 }
+// config.timeout = 3000  // ❌ Error — Readonly
+
+// keyof: extrae las keys de una interface
+interface Pieza { nombre: string; peso: number; activo: boolean }
+type CampoPieza = keyof Pieza  // "nombre" | "peso" | "activo"
+
+// ReturnType: infiere el tipo de retorno de una función
+function obtenerStock(nombre: string): number {
+  return stock[nombre] ?? 0
+}
+type TipoRetorno = ReturnType<typeof obtenerStock>  // number`,
+    tips: [
+      'Record<string, number> es equivalente a { [key: string]: number }',
+      'Readonly no es lo mismo que const — aplica deep immutability al tipo',
+      'keyof es muy útil para funciones genéricas que acceden propiedades por nombre',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'catalog' as const,
   subtitle: 'immutable-catalog.ts — Inventarios tipados que no pueden modificarse accidentalmente',

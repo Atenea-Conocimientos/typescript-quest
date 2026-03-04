@@ -56,6 +56,31 @@ console.log(identificarPieza(null))`,
     output.some((l) => l.includes('ID: 42')) &&
     output.some((l) => l.toUpperCase().includes('PERNO M6')) &&
     output.some((l) => l.includes('Sensor') || l.includes('vac')),
+  lesson: {
+    explanation: 'Un union type permite que una variable sea de uno de varios tipos posibles, usando |. Los tipos literal (como "aprobado" | "rechazado") son perfectos para representar estados — TypeScript garantiza que solo uses valores válidos del conjunto definido.',
+    codeExample: `// Union de tipos primitivos
+let id: string | number = "P-001"
+id = 42  // ✅ también acepta number
+
+// Union de tipos literal (más preciso)
+type EstadoOrden = "pendiente" | "procesando" | "completada" | "fallida"
+let estado: EstadoOrden = "pendiente"
+// estado = "cancelada"  // ❌ Error — no está en la union
+
+// TypeScript hace narrowing automático:
+function procesar(valor: string | number) {
+  if (typeof valor === "string") {
+    console.log(valor.toUpperCase())  // sabe que es string
+  } else {
+    console.log(valor * 2)           // sabe que es number
+  }
+}`,
+    tips: [
+      '| separa los tipos posibles en una union',
+      'Los tipos literal "ok" | "error" son muy usados para estados de sistema',
+      'TypeScript hace narrowing dentro de cada if — sabe el tipo exacto',
+    ],
+  },
   stampsRequired: 4,
   mechanic: 'detector' as const,
 };

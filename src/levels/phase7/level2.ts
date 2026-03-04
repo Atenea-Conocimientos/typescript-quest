@@ -71,6 +71,37 @@ if (resultado) {
 }`,
   validate: (output: string[]) =>
     output.some(l => l.toLowerCase().includes('camino encontrado')),
+  lesson: {
+    explanation: 'DFS (Depth-First Search) explora un grafo o árbol yendo tan profundo como puede antes de retroceder. Se implementa con un stack (pila): sacás el último elemento, explorás sus vecinos, los agregás al stack, y repetís. TypeScript tipado hace que este algoritmo sea seguro y expresivo.',
+    codeExample: `type Pos = [number, number]
+const DIRS: Pos[] = [[-1,0], [1,0], [0,-1], [0,1]]
+
+function dfs(grilla: string[][], inicio: Pos): Pos[] | null {
+  // Stack: cada entrada es [posición actual, camino recorrido]
+  const stack: [Pos, Pos[]][] = [[inicio, [inicio]]]
+  const visitados = new Set<string>()
+
+  while (stack.length) {
+    const [[r, c], camino] = stack.pop()!
+
+    if (grilla[r][c] === "E") return camino  // ← encontrado!
+
+    for (const [dr, dc] of DIRS) {
+      const clave = \`\${r+dr},\${c+dc}\`
+      if (!visitados.has(clave) && grilla[r+dr]?.[c+dc] !== "#") {
+        visitados.add(clave)
+        stack.push([[r+dr, c+dc], [...camino, [r+dr, c+dc]]])
+      }
+    }
+  }
+  return null  // sin camino
+}`,
+    tips: [
+      'Stack → DFS (profundidad primero). Queue → BFS (amplitud primero, camino más corto)',
+      'Set<string> para visitados evita revisitar nodos — fundamental para correctitud',
+      'El operador ?. en grilla[r+dr]?.[c+dc] maneja los bordes del mapa sin errores',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'maze' as const,
 

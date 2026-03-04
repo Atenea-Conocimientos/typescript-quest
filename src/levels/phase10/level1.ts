@@ -76,6 +76,38 @@ console.log(\`Protocolo completado: \${contador} intentos\`)`,
     output.some(l => l.includes('ensamblada')) &&
     output.some(l => l.includes('ErrorEnergia') || l.includes('insuficiente')) &&
     output.some(l => l.includes('Protocolo completado: 3 intentos')),
+  lesson: {
+    explanation: 'Las custom errors son clases que extienden Error para representar tipos específicos de falla. En TypeScript el parámetro de catch es unknown — necesitás instanceof para acceder a las propiedades. Una jerarquía de errores bien diseñada hace que el código de manejo sea limpio y exhaustivo.',
+    codeExample: `class ErrorFabrica extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ErrorFabrica"  // importante para el stack trace
+  }
+}
+
+class ErrorEnergia extends ErrorFabrica {
+  constructor(public nivelActual: number) {
+    super(\`Energía insuficiente: \${nivelActual}%\`)
+    this.name = "ErrorEnergia"
+  }
+}
+
+// En el catch, el error es 'unknown' en TypeScript:
+try {
+  throw new ErrorEnergia(5)
+} catch (e) {
+  if (e instanceof ErrorEnergia) {
+    console.log(\`Nivel: \${e.nivelActual}%\`)  // ✅ type-safe
+  } else if (e instanceof ErrorFabrica) {
+    console.log(e.message)
+  }
+}`,
+    tips: [
+      'Siempre llamá super(message) y establecé this.name en el constructor',
+      'En TypeScript el catch siempre es unknown — usá instanceof antes de acceder propiedades',
+      'La jerarquía permite capturar tipos específicos o la clase base según el contexto',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'faultlog' as const,
   subtitle: 'custom-errors.ts — Errores tipados que el compilador puede distinguir y manejar',

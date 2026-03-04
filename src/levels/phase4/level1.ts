@@ -46,6 +46,30 @@ console.log(\`Lote más grande: \${maximo} piezas\`)`,
   validate: (output: string[]) =>
     output.some((l) => l.includes('Total lotes: 5')) &&
     output.some((l) => /Lote m[aá]s grande: \d+/.test(l)),
+  lesson: {
+    explanation: 'Un array es una lista ordenada de elementos del mismo tipo. En TypeScript, string[] es un array de strings, number[] de números. Los arrays son fundamentales en testing: listas de elementos a verificar, resultados de queries, lotes de datos de prueba.',
+    codeExample: `// Declarar arrays tipados
+const piezas: string[] = ["perno", "tuerca", "arandela"]
+const precios: number[] = [0.5, 1.2, 0.8]
+
+// Acceder por índice (empieza en 0)
+console.log(piezas[0])    // "perno"
+console.log(piezas.length) // 3
+
+// Métodos esenciales
+piezas.push("tornillo")           // agrega al final
+const ultimo = piezas.pop()       // saca el último
+const sublista = piezas.slice(0, 2) // copia parcial
+
+// Iterar
+piezas.forEach(p => console.log(p))
+const mayus = piezas.map(p => p.toUpperCase())`,
+    tips: [
+      'Los índices empiezan en 0 — el último es length - 1',
+      'push/pop para agregar/quitar al final, unshift/shift al inicio',
+      'forEach para iterar, map para transformar, filter para filtrar',
+    ],
+  },
   stampsRequired: 4,
   mechanic: 'warehouse' as const,
 };

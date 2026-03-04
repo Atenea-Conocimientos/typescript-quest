@@ -70,6 +70,37 @@ console.log(\`Aprobadas: \${aprobadas} / Rechazadas: \${rechazadas}\`)`,
     output.some(l => l.includes('✅')) &&
     output.some(l => l.includes('❌')) &&
     output.some(l => l.includes('Aprobadas:') && l.includes('Rechazadas:')),
+  lesson: {
+    explanation: 'El patrón Result<T, E> representa el resultado de una operación que puede fallar, sin usar excepciones. Es una discriminated union con dos variantes: { ok: true; value: T } o { ok: false; error: E }. El código que llama decide qué hacer con el resultado — los errores son valores, no excepciones.',
+    codeExample: `type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
+
+// Helpers para construir resultados
+function ok<T>(value: T): Result<T, never> {
+  return { ok: true, value }
+}
+function err<E>(error: E): Result<never, E> {
+  return { ok: false, error }
+}
+
+// Función que retorna Result en vez de lanzar excepciones
+function dividir(a: number, b: number): Result<number, string> {
+  if (b === 0) return err("División por cero")
+  return ok(a / b)
+}
+
+// Usar el resultado de forma segura:
+const resultado = dividir(10, 2)
+if (resultado.ok) {
+  console.log(resultado.value)  // ✅ TypeScript sabe: number
+} else {
+  console.log(resultado.error)  // ✅ TypeScript sabe: string
+}`,
+    tips: [
+      'Result hace los errores explícitos — el caller no puede ignorarlos accidentalmente',
+      'Podés encadenar Results con funciones que reciben un valor y retornan otro Result',
+      'Muy usado en Rust y ahora en TypeScript para código sin excepciones inesperadas',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'result-board' as const,
   subtitle: 'result-pattern.ts — Errores como valores: sin excepciones, con type safety total',

@@ -72,6 +72,32 @@ procesarEstado(EstadoLinea.PAUSA)`,
     output.some((l) => l.includes('produciendo')) &&
     output.some((l) => l.includes('cnico') || l.includes('técnico')) &&
     output.some((l) => l.includes('Estado:')),
+  lesson: {
+    explanation: 'Un enum es un conjunto de constantes con nombre. En vez de strings sueltos ("pendiente", "activo") usás EstadoLinea.Activo — TypeScript garantiza que solo uses valores válidos. El switch sobre un enum es un patrón clásico para ejecutar distintas acciones según el estado del sistema.',
+    codeExample: `enum EstadoLinea {
+  Inactiva = "INACTIVA",
+  Activa   = "ACTIVA",
+  Pausa    = "PAUSA",
+  Error    = "ERROR",
+}
+
+function procesarEstado(estado: EstadoLinea): string {
+  switch (estado) {
+    case EstadoLinea.Activa:   return "✅ Produciendo"
+    case EstadoLinea.Pausa:    return "⏸ En pausa"
+    case EstadoLinea.Error:    return "🔴 Error — revisar"
+    case EstadoLinea.Inactiva: return "⭕ Sin actividad"
+  }
+}
+
+console.log(procesarEstado(EstadoLinea.Activa))
+// → ✅ Produciendo`,
+    tips: [
+      'Enum con string values: más legible en logs y en el debugger',
+      'switch + enum es más seguro que if/else encadenados',
+      'Alternativa moderna: union de literales ("activa" | "pausa" | "error")',
+    ],
+  },
   stampsRequired: 4,
   mechanic: 'panel' as const,
 };

@@ -102,6 +102,37 @@ console.log('Sistema operativo ✅')`,
   validate: (output: string[]) =>
     output.some(l => l.includes('Almacén')) &&
     output.some(l => l.includes('Sistema operativo ✅')),
+  lesson: {
+    explanation: 'El boss final integra todo lo aprendido en un sistema real: una clase genérica con Result para errores, Omit para vistas públicas, y async/await para operaciones en paralelo. No hay una única solución correcta — hay múltiples formas válidas de implementarlo.',
+    codeExample: `// El sistema que vas a construir:
+class Almacen<T extends { id: string; stock: number }> {
+  private items = new Map<string, T>()
+
+  agregar(item: T): Result<T, string> { ... }
+  obtener(id: string): Result<T, string> { ... }
+  actualizarStock(id: string, delta: number): Result<number, string> { ... }
+  resumen(): string { ... }
+}
+
+// Async con Result:
+async function procesarPedido(
+  almacen: Almacen<Producto>,
+  id: string,
+  cantidad: number
+): Promise<Result<string, string>> { ... }
+
+// Uso final:
+const resultados = await Promise.all([
+  procesarPedido(almacen, "P001", 30),
+  procesarPedido(almacen, "P002", 15),
+])
+// → [{ ok: true, value: "..." }, { ok: false, error: "..." }]`,
+    tips: [
+      'Empezá por los tipos: Result<T,E>, la interface Producto, el Almacen genérico',
+      'Implementá método por método — cada uno puede usar los anteriores',
+      'async + Promise.all al final: el sistema corre pedidos en paralelo',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'factory-complete' as const,
   subtitle: 'fabrica-completa.ts — Integrá todo lo aprendido en un sistema real de producción',

@@ -50,6 +50,30 @@ console.log(\`\${etiq} → Eficiencia: \${efic.toFixed(1)}%\`)`,
   ],
   validate: (output: string[]) =>
     output.some((l) => l.includes('PERNO M6') && l.includes('84.7%')),
+  lesson: {
+    explanation: 'Las funciones son bloques de código reutilizables. En TypeScript declarás el tipo de cada parámetro y el tipo de retorno — esto garantiza que la función siempre reciba lo correcto y siempre devuelva lo esperado. En automatización, cada helper, Page Object method y utilidad es una función.',
+    codeExample: `// Función clásica con tipos
+function calcular(piezas: number, horas: number): number {
+  return piezas / horas
+}
+console.log(calcular(100, 8))  // 12.5
+
+// Arrow function (sintaxis moderna, muy usada)
+const saludar = (nombre: string): string =>
+  \`Hola, \${nombre}!\`
+
+// Parámetro con valor por defecto
+function ensamblar(pieza: string, cantidad: number = 1): string {
+  return \`\${cantidad}x \${pieza}\`
+}
+console.log(ensamblar("perno"))     // "1x perno"
+console.log(ensamblar("tuerca", 5)) // "5x tuerca"`,
+    tips: [
+      'Tipá siempre los parámetros: (nombre: string, cant: number)',
+      'El tipo de retorno va después del paréntesis de cierre: ): number',
+      'Parámetro opcional con default: (cant: number = 1)',
+    ],
+  },
   stampsRequired: 4,
   mechanic: 'machine' as const,
 };

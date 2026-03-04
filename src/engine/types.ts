@@ -37,6 +37,15 @@ export interface Mentor {
   phases: number[];
 }
 
+export interface LevelLesson {
+  /** 2-3 sentences explaining the concept in plain language */
+  explanation: string;
+  /** TypeScript code shown read-only as example */
+  codeExample: string;
+  /** 2-4 practical tips as bullet points */
+  tips: string[];
+}
+
 export interface Level {
   id: string;
   phase: number;
@@ -52,6 +61,9 @@ export interface Level {
   validate: (output: string[]) => boolean;
   stampsRequired?: number;
   mechanic: LevelMechanic;
+
+  // ── Pre-exercise lesson (shown before the editor) ─────────────────────────
+  lesson?: LevelLesson;
 
   // ── Curriculum metadata (optional, used for course display) ──────────────
   /** Short subtitle shown below the title (e.g. "generics.ts — ...") */

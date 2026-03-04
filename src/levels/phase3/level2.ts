@@ -45,6 +45,31 @@ console.log(\`Total estaciones: \${filas * columnas}\`)`,
   validate: (output: string[]) =>
     output.some((l) => l.includes('Total estaciones: 16')) &&
     output.some((l) => l.includes('Estaci')),
+  lesson: {
+    explanation: 'El for con índice es perfecto cuando necesitás iterar un número conocido de veces. El for anidado (un for dentro de otro) te permite recorrer estructuras bidimensionales — una grilla de estaciones, una tabla de datos, o en testing: filas × columnas de un dataset de prueba.',
+    codeExample: `// For simple: 5 iteraciones
+for (let i = 0; i < 5; i++) {
+  console.log(\`Estación \${i + 1}\`)
+}
+
+// For anidado: grilla 3×3 (9 combinaciones)
+for (let fila = 0; fila < 3; fila++) {
+  for (let col = 0; col < 3; col++) {
+    console.log(\`Celda [\${fila}][\${col}]\`)
+  }
+}
+
+// for...of para arrays (más limpio que índice):
+const items = ["perno", "tuerca", "arandela"]
+for (const item of items) {
+  console.log(item)
+}`,
+    tips: [
+      'i++ es shorthand para i = i + 1',
+      'El índice suele empezar en 0 — el límite es longitud - 1',
+      'Preferí for...of para arrays cuando no necesitás el índice',
+    ],
+  },
   stampsRequired: 4,
   mechanic: 'grid' as const,
 };

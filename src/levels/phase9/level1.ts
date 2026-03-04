@@ -64,6 +64,34 @@ console.log(\`Escaneadas: \${lote.length} piezas\`)`,
     output.some(l => l.includes('Metal:')) &&
     output.some(l => l.includes('Electronica:')) &&
     output.some(l => l.includes('Escaneadas: 4 piezas')),
+  lesson: {
+    explanation: 'Los type guards son expresiones que, al ser verdaderas, le dicen a TypeScript el tipo exacto de una variable. Dentro del if, el compilador "estrecha" (narrow) el tipo y habilita solo las operaciones válidas para ese tipo. Es la diferencia entre código seguro y código que puede fallar en runtime.',
+    codeExample: `// typeof: para primitivos
+function identificar(valor: unknown): string {
+  if (typeof valor === "string") return valor.toUpperCase()  // sabe: string
+  if (typeof valor === "number") return String(valor * 2)   // sabe: number
+  return "desconocido"
+}
+
+// instanceof: para clases
+class PiezaMetal { constructor(public peso: number) {} }
+class PiezaElec  { constructor(public voltaje: number) {} }
+
+function procesar(p: PiezaMetal | PiezaElec): string {
+  if (p instanceof PiezaMetal) return \`Metal: \${p.peso}kg\`
+  return \`Electrónica: \${p.voltaje}V\`  // TypeScript sabe: PiezaElec
+}
+
+// Type predicate: función que actúa como guard
+function esMetal(p: PiezaMetal | PiezaElec): p is PiezaMetal {
+  return p instanceof PiezaMetal
+}`,
+    tips: [
+      'typeof funciona para: "string", "number", "boolean", "object", "function"',
+      'instanceof funciona para clases — no para interfaces (estas no existen en JS)',
+      'p is T en el return type convierte la función en un type guard reutilizable',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'narrower' as const,
   subtitle: 'type-guards.ts — El robot identifica el tipo exacto de cada pieza antes de procesarla',

@@ -72,6 +72,42 @@ console.log(\`Total piezas: \${r1.piezas + r2.piezas}\`)`,
   validate: (output: string[]) =>
     output.some(l => /\[.+\] ⚡\d+ 🔩\d+/.test(l)) &&
     output.some(l => l.includes('Total piezas:')),
+  lesson: {
+    explanation: 'Una clase es un plano para crear objetos con estado (propiedades) y comportamiento (métodos). El constructor inicializa el estado, this accede a las propiedades del objeto. extends permite heredar y extender una clase base sin duplicar código.',
+    codeExample: `class Robot {
+  readonly nombre: string
+  private energia: number = 100
+  public piezas: number = 0
+
+  constructor(nombre: string) {
+    this.nombre = nombre
+  }
+
+  ensamblar(): boolean {
+    if (this.energia < 10) return false
+    this.energia -= 10
+    this.piezas++
+    return true
+  }
+
+  reporte(): string {
+    return \`[\${this.nombre}] ⚡\${this.energia} 🔩\${this.piezas}\`
+  }
+}
+
+class RobotPro extends Robot {
+  ensamblar(): boolean {
+    // sobrescribe: consume solo 5 de energía
+    this.piezas++
+    return true
+  }
+}`,
+    tips: [
+      'readonly: no se puede cambiar después del constructor',
+      'private: solo accesible dentro de la clase; public: accesible desde afuera',
+      'extends + super(args) para heredar e inicializar la clase base',
+    ],
+  },
   stampsRequired: 5,
   mechanic: 'blueprint' as const,
 

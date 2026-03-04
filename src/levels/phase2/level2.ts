@@ -37,6 +37,28 @@ if (calidad >= 90) {
   ],
   validate: (output: string[]) =>
     output.some((line) => line.includes('RETRABAJAR')),
+  lesson: {
+    explanation: 'if/else permite que el robot tome decisiones basadas en condiciones. TypeScript verifica que las condiciones tengan sentido según los tipos declarados. En testing, los condicionales aparecen en validaciones, en lógica de retry, y en clasificación de resultados.',
+    codeExample: `const calidad = 8
+
+if (calidad > 9) {
+  console.log("PREMIUM")
+} else if (calidad >= 7) {
+  console.log("APROBADO")   // ← este se ejecuta
+} else {
+  console.log("RECHAZADO")
+}
+
+// Operadores de comparación:
+// >  <  >=  <=  (mayor, menor, mayor-igual, menor-igual)
+// === igual en valor Y tipo  (usá siempre este, no ==)
+// !== distinto en valor Y tipo`,
+    tips: [
+      'Usá === (triple igual) para comparar — no == (doble)',
+      '=== compara valor Y tipo: "5" === 5 es false, 5 === 5 es true',
+      'Podés anidar if/else if para múltiples condiciones',
+    ],
+  },
   stampsRequired: 3,
   mechanic: 'sorter' as const,
 };
