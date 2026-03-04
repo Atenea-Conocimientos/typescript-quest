@@ -47,9 +47,11 @@ self.onmessage = async (event: MessageEvent<{ code: string; id: string }>) => {
     await ensureInitialized();
 
     // Compile TypeScript to JavaScript (throws on syntax error)
+    // target: 'esnext' is required to allow top-level await in user code
+    // (e.g. `await turnoFinal()` at module root). es2020 rejects top-level await.
     const result = await transform(code, {
       loader: 'ts',
-      target: 'es2020',
+      target: 'esnext',
       format: 'esm',
     });
 
