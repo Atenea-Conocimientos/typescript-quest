@@ -1421,6 +1421,526 @@ function PipelineMechanic({ stampsRequired, stampedCount, onActivate }: Mechanic
   );
 }
 
+// ─── FORGE (p6-l1: generics <T>) ──────────────────────────────────────────────
+function ForgeMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const [loading, setLoading] = useState(false);
+  const [crates, setCrates]   = useState<{ label: string; value: string; tag: string; color: string }[]>([]);
+  const [visible, setVisible] = useState<boolean[]>([]);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setCrates([]); setVisible([]);
+    const { output, success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      const parsed: { label: string; value: string; tag: string; color: string }[] = [];
+      for (const line of output) {
+        if (line.includes('Caja:')) {
+          const parts = line.replace('Caja:', '').split('→');
+          const label = (parts[0] ?? '').trim();
+          const value = (parts[1] ?? '').trim();
+          const isNum = /^\d+/.test(value);
+          parsed.push({
+            label,
+            value,
+            tag: isNum ? '<number>' : '<Producto>',
+            color: isNum ? C.amber : C.green,
+          });
+        } else if (line.includes('Primero del depósito:')) {
+          const val = line.replace('Primero del depósito:', '').trim();
+          parsed.push({ label: 'Primero', value: val, tag: '<T>', color: C.cyan });
+        }
+      }
+      setCrates(parsed);
+      parsed.forEach((_, i) => {
+        setTimeout(() => setVisible(prev => { const next = [...prev]; next[i] = true; return next; }), i * 320);
+      });
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="⚗️ Forja Genérica — generics <T>" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="⚗️ FORJAR CAJAS" />
+      </div>
+    </>}>
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+        {crates.length === 0 && !loading && (
+          <div style={{ color: C.textSec, fontFamily: 'monospace', fontSize: 12, textAlign: 'center' }}>
+            Ejecutá tu código para ver las cajas genéricas
+          </div>
+        )}
+        {crates.map((c, i) => (
+          <div key={i} style={{
+            opacity: visible[i] ? 1 : 0,
+            transform: visible[i] ? 'translateY(0)' : 'translateY(-24px)',
+            transition: 'all 0.45s cubic-bezier(0.34,1.56,0.64,1)',
+            border: `2px solid ${c.color}`,
+            borderRadius: 12, padding: '14px 18px', minWidth: 120,
+            background: `${c.color}10`, textAlign: 'center', boxShadow: `0 0 14px ${c.color}30`,
+          }}>
+            <div style={{ fontSize: 9, color: c.color, fontFamily: 'monospace', marginBottom: 6, fontWeight: 700 }}>
+              {c.tag}
+            </div>
+            <div style={{ fontSize: 11, color: C.textSec, fontFamily: 'monospace', marginBottom: 4 }}>
+              {c.label}
+            </div>
+            <div style={{ fontSize: 16, color: c.color, fontWeight: 700, fontFamily: 'monospace' }}>
+              {c.value}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 18 }}>📦</div>
+          </div>
+        ))}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+// ─── BLUEPRINT (p6-l2: classes) ───────────────────────────────────────────────
+function BlueprintMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const [loading, setLoading]   = useState(false);
+  const [robots, setRobots]     = useState<{ nombre: string; energia: number; piezas: number }[]>([]);
+  const [phases, setPhases]     = useState<number[]>([]); // 0=hidden,1=name,2=energy,3=full
+  const [total, setTotal]       = useState<number | null>(null);
+  const [success, setSuccess]   = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setRobots([]); setPhases([]); setTotal(null);
+    const { output, success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      const parsed: { nombre: string; energia: number; piezas: number }[] = [];
+      for (const line of output) {
+        const m = line.match(/\[(.+?)\]\s*⚡(\d+)\s*🔩(\d+)/);
+        if (m) parsed.push({ nombre: m[1], energia: parseInt(m[2]), piezas: parseInt(m[3]) });
+        const t = line.match(/Total piezas:\s*(\d+)/);
+        if (t) setTotal(parseInt(t[1]));
+      }
+      setRobots(parsed);
+      setPhases(new Array(parsed.length).fill(0));
+      parsed.forEach((_, i) => {
+        setTimeout(() => setPhases(prev => { const n = [...prev]; n[i] = 1; return n; }), i * 500 + 200);
+        setTimeout(() => setPhases(prev => { const n = [...prev]; n[i] = 2; return n; }), i * 500 + 600);
+        setTimeout(() => setPhases(prev => { const n = [...prev]; n[i] = 3; return n; }), i * 500 + 950);
+      });
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="🤖 Blueprint de Robot — class · extends" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="🤖 ENSAMBLAR ROBOT" />
+      </div>
+    </>}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+        {robots.length === 0 && !loading && (
+          <div style={{ color: C.textSec, fontFamily: 'monospace', fontSize: 12 }}>
+            Ejecutá tu código para ver los robots ensamblarse
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {robots.map((r, i) => (
+            <div key={i} style={{
+              border: `2px solid ${phases[i] >= 1 ? C.purple : C.border}`,
+              borderRadius: 12, padding: '14px 18px', minWidth: 150,
+              background: C.bgSec, transition: 'all 0.4s',
+              boxShadow: phases[i] >= 3 ? `0 0 16px ${C.purple}40` : 'none',
+              opacity: phases[i] >= 1 ? 1 : 0, transform: phases[i] >= 1 ? 'scale(1)' : 'scale(0.8)',
+            }}>
+              {/* Name badge */}
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: C.purpleL, fontFamily: 'monospace',
+                marginBottom: 10, textAlign: 'center',
+                opacity: phases[i] >= 1 ? 1 : 0, transition: 'opacity 0.3s',
+              }}>
+                🤖 {r.nombre}
+              </div>
+              {/* Energy bar */}
+              {phases[i] >= 2 && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, color: C.textSec, fontFamily: 'monospace', marginBottom: 3 }}>
+                    ⚡ Energía {r.energia}%
+                  </div>
+                  <div style={{ height: 8, background: C.bgTer, borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', width: `${r.energia}%`, background: C.cyan,
+                      borderRadius: 4, transition: 'width 0.6s ease',
+                    }} />
+                  </div>
+                </div>
+              )}
+              {/* Pieces */}
+              {phases[i] >= 3 && (
+                <div style={{ fontSize: 12, color: C.green, fontFamily: 'monospace', textAlign: 'center' }}>
+                  🔩 {r.piezas} piezas
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        {total !== null && phases.every(p => p >= 3) && (
+          <div style={{ fontSize: 13, color: C.green, fontFamily: 'monospace', fontWeight: 700 }}>
+            ✅ Total producción: {total} piezas
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+// ─── RECURSION TREE (p6-l3: recursion) ────────────────────────────────────────
+function RecursionTreeMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const [loading, setLoading] = useState(false);
+  const [litNodes, setLitNodes] = useState<Set<string>>(new Set());
+  const [total, setTotal]     = useState<number | null>(null);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  // Animation sequence for recursion tree: leaves → root
+  const SEQUENCE = ['A1', 'B', 'A', 'Principal'];
+
+  async function run() {
+    setLoading(true); setLitNodes(new Set()); setTotal(null);
+    const { output, success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      const t = output.find(l => l.includes('Total piezas:'));
+      if (t) {
+        const m = t.match(/Total piezas:\s*(\d+)/);
+        if (m) {
+          const finalTotal = parseInt(m[1]);
+          SEQUENCE.forEach((nodeId, i) => {
+            setTimeout(() => {
+              setLitNodes(prev => new Set([...prev, nodeId]));
+              if (i === SEQUENCE.length - 1) setTotal(finalTotal);
+            }, i * 400 + 200);
+          });
+        }
+      }
+    }
+    setLoading(false);
+  }
+
+  const nodeStyle = (id: string) => ({
+    border: `2px solid ${litNodes.has(id) ? C.cyan : C.border}`,
+    borderRadius: 8, padding: '8px 12px', textAlign: 'center' as const,
+    background: litNodes.has(id) ? `${C.cyan}15` : C.bgSec,
+    boxShadow: litNodes.has(id) ? `0 0 12px ${C.cyan}40` : 'none',
+    transition: 'all 0.35s', minWidth: 80,
+    fontFamily: 'monospace',
+  });
+
+  return (
+    <MechanicWrapper label="🌳 Árbol de Cajas — recursión · caso base" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="🌳 CONTAR ÁRBOL" />
+      </div>
+    </>}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {/* Row 0: Principal */}
+        <div style={nodeStyle('Principal')}>
+          <div style={{ fontSize: 10, color: C.textSec }}>Principal</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: litNodes.has('Principal') ? C.cyan : C.text }}>
+            {total !== null && litNodes.has('Principal') ? total : 10} 🔩
+          </div>
+        </div>
+        {/* Connector lines */}
+        <div style={{ display: 'flex', gap: 60, position: 'relative', alignItems: 'flex-start' }}>
+          <div style={{ position: 'absolute', top: -8, left: '50%', width: 1, height: 8, background: C.border }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            {/* Row 1: A */}
+            <div style={{ width: 1, height: 16, background: C.border }} />
+            <div style={nodeStyle('A')}>
+              <div style={{ fontSize: 10, color: C.textSec }}>A</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: litNodes.has('A') ? C.cyan : C.text }}>
+                {litNodes.has('A') ? 70 : 50} 🔩
+              </div>
+            </div>
+            <div style={{ width: 1, height: 16, background: C.border }} />
+            {/* Row 2: A1 */}
+            <div style={nodeStyle('A1')}>
+              <div style={{ fontSize: 10, color: C.textSec }}>A1</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: litNodes.has('A1') ? C.cyan : C.text }}>
+                20 🔩
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            {/* Row 1: B */}
+            <div style={{ width: 1, height: 16, background: C.border }} />
+            <div style={nodeStyle('B')}>
+              <div style={{ fontSize: 10, color: C.textSec }}>B</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: litNodes.has('B') ? C.cyan : C.text }}>
+                30 🔩
+              </div>
+            </div>
+          </div>
+        </div>
+        {total !== null && (
+          <div style={{ fontSize: 12, color: C.green, fontFamily: 'monospace', marginTop: 8, fontWeight: 700 }}>
+            contarTotal() = {total} ✅
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+// ─── BAR SORT (p7-l1: sorting) ────────────────────────────────────────────────
+function BarSortMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const INITIAL = [64, 34, 25, 12, 22, 11, 90];
+  const [loading, setLoading] = useState(false);
+  const [bars, setBars]       = useState<number[]>(INITIAL);
+  const [sorted, setSorted]   = useState(false);
+  const [success, setSuccess] = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setBars(INITIAL); setSorted(false);
+    const { output, success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      const line = output.find(l => l.includes('Ordenado:'));
+      if (line) {
+        const m = line.match(/\[([^\]]+)\]/);
+        if (m) {
+          const nums = m[1].split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+          if (nums.length > 0) {
+            setTimeout(() => { setBars(nums); setSorted(true); }, 600);
+          }
+        }
+      }
+    }
+    setLoading(false);
+  }
+
+  const maxVal = Math.max(...bars, 1);
+
+  return (
+    <MechanicWrapper label="📊 Clasificadora de Pedidos — Bubble Sort · Array.sort()" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="📊 ORDENAR LOTE" />
+      </div>
+    </>}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'flex-end', padding: '8px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: '80%', width: '100%', justifyContent: 'center' }}>
+          {bars.map((val, i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, maxWidth: 52 }}>
+              <div style={{ fontSize: 10, color: sorted ? C.green : C.textSec, fontFamily: 'monospace', fontWeight: 700 }}>
+                {val}
+              </div>
+              <div style={{
+                width: '100%', height: `${(val / maxVal) * 160}px`,
+                background: sorted
+                  ? `linear-gradient(180deg, ${C.green}, #16a34a)`
+                  : `linear-gradient(180deg, ${C.purple}, #5b21b6)`,
+                borderRadius: '6px 6px 2px 2px',
+                transition: 'height 0.8s cubic-bezier(0.34,1.56,0.64,1), background 0.5s',
+                boxShadow: sorted ? `0 0 10px ${C.green}40` : `0 0 6px ${C.purple}30`,
+              }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: sorted ? C.green : C.textSec, fontFamily: 'monospace', marginTop: 10 }}>
+          {sorted ? '✅ Ordenado ascendente' : '● Sin ordenar'}
+        </div>
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+// ─── MAZE (p7-l2: DFS) ────────────────────────────────────────────────────────
+function MazeMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const GRID = [
+    ['.', '.', '#', '.', 'E'],
+    ['#', '.', '#', '.', '#'],
+    ['.', '.', '.', '.', '#'],
+    ['.', '#', '#', '.', '.'],
+    ['S', '.', '.', '#', '.'],
+  ];
+  // Known valid path for S=[4,0] to E=[0,4]
+  const FALLBACK_PATH: [number, number][] = [
+    [4,0],[3,0],[2,0],[2,1],[2,2],[2,3],[1,3],[0,3],[0,4]
+  ];
+
+  const [loading, setLoading] = useState(false);
+  const [activePath, setActivePath] = useState<Set<string>>(new Set());
+  const [robotPos, setRobotPos]    = useState<[number,number] | null>(null);
+  const [done, setDone]            = useState(false);
+  const [success, setSuccess]      = useState<boolean | null>(null);
+
+  async function run() {
+    setLoading(true); setActivePath(new Set()); setRobotPos(null); setDone(false);
+    const { output, success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      // Parse path from output lines like "  → [r,c]"
+      const pathSteps: [number, number][] = [];
+      for (const line of output) {
+        const m = line.match(/→\s*\[(\d+),\s*(\d+)\]/);
+        if (m) pathSteps.push([parseInt(m[1]), parseInt(m[2])]);
+      }
+      const path = pathSteps.length >= 2 ? pathSteps : FALLBACK_PATH;
+      path.forEach((pos, i) => {
+        setTimeout(() => {
+          const key = `${pos[0]},${pos[1]}`;
+          setActivePath(prev => new Set([...prev, key]));
+          setRobotPos(pos);
+          if (i === path.length - 1) setDone(true);
+        }, i * 230);
+      });
+    }
+    setLoading(false);
+  }
+
+  function cellColor(cell: string, r: number, c: number): string {
+    const key = `${r},${c}`;
+    if (activePath.has(key) && cell !== 'S' && cell !== 'E') return C.purple;
+    if (cell === 'S') return C.green;
+    if (cell === 'E') return done ? C.green : C.cyan;
+    if (cell === '#') return '#1a1f26';
+    return C.bgSec;
+  }
+
+  function cellBorder(cell: string, r: number, c: number): string {
+    const key = `${r},${c}`;
+    if (cell === 'S') return C.green;
+    if (cell === 'E') return done ? C.green : C.cyan;
+    if (activePath.has(key)) return C.purpleL;
+    return C.border;
+  }
+
+  return (
+    <MechanicWrapper label="🔍 Laberinto del Almacén — DFS · stack · Set<string>" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="🔍 BUSCAR CAMINO" />
+      </div>
+    </>}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 48px)',
+          gridTemplateRows: 'repeat(5, 44px)', gap: 4 }}>
+          {GRID.map((row, r) => row.map((cell, c) => {
+            const isRobot = robotPos && robotPos[0] === r && robotPos[1] === c;
+            return (
+              <div key={`${r},${c}`} style={{
+                border: `2px solid ${cellBorder(cell, r, c)}`,
+                borderRadius: 6, background: cellColor(cell, r, c),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: cell === '#' ? 14 : 12, fontWeight: 700,
+                color: cell === '#' ? '#2d333b' : C.text,
+                transition: 'all 0.25s',
+                boxShadow: activePath.has(`${r},${c}`) ? `0 0 8px ${C.purple}60` : 'none',
+              }}>
+                {isRobot ? '🤖' : cell === '#' ? '▪' : cell === 'S' ? 'S' : cell === 'E' ? 'E' : ''}
+              </div>
+            );
+          }))}
+        </div>
+        <div style={{ fontSize: 11, fontFamily: 'monospace', color: done ? C.green : C.textSec }}>
+          {done ? '✅ ¡Envío encontrado!' : robotPos ? '🤖 Navegando...' : 'S = inicio · E = destino · # = pared'}
+        </div>
+      </div>
+    </MechanicWrapper>
+  );
+}
+
+// ─── PARALLEL (p7-l3: async/await) ────────────────────────────────────────────
+function ParallelMechanic({ stampsRequired, stampedCount, onActivate }: MechanicProps) {
+  const TASKS = [
+    { nombre: 'Ensamblado',  ms: 1200, emoji: '🔩' },
+    { nombre: 'Pintado',     ms: 1600, emoji: '🎨' },
+    { nombre: 'Control QA',  ms: 800,  emoji: '🔬' },
+    { nombre: 'Despacho',    ms: 2000, emoji: '📦' },
+  ];
+
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<number[]>([0, 0, 0, 0]);
+  const [done, setDone]         = useState<boolean[]>([false, false, false, false]);
+  const [allDone, setAllDone]   = useState(false);
+  const [success, setSuccess]   = useState<boolean | null>(null);
+  const timersRef = useRef<ReturnType<typeof setInterval>[]>([]);
+
+  async function run() {
+    timersRef.current.forEach(clearInterval);
+    setLoading(true); setProgress([0,0,0,0]); setDone([false,false,false,false]); setAllDone(false);
+    const { success: ok } = await onActivate();
+    setSuccess(ok);
+    if (ok) {
+      const intervals: ReturnType<typeof setInterval>[] = [];
+      TASKS.forEach((task, i) => {
+        const steps = 30;
+        const stepMs = task.ms / steps;
+        let step = 0;
+        const iv = setInterval(() => {
+          step++;
+          const pct = Math.min(100, Math.round((step / steps) * 100));
+          setProgress(prev => { const n = [...prev]; n[i] = pct; return n; });
+          if (step >= steps) {
+            clearInterval(iv);
+            setDone(prev => { const n = [...prev]; n[i] = true; return n; });
+          }
+        }, stepMs);
+        intervals.push(iv);
+      });
+      timersRef.current = intervals;
+      setTimeout(() => setAllDone(true), Math.max(...TASKS.map(t => t.ms)) + 100);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <MechanicWrapper label="⚡ Fábrica Multi-Robot — Promise.all · async/await" bottom={<>
+      <FeedbackLine success={success} />
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <StampDots required={stampsRequired} count={stampedCount} />
+        <ActionBtn onClick={run} loading={loading} label="⚡ LANZAR TURNO" />
+      </div>
+    </>}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', gap: 14, padding: '0 8px' }}>
+        {TASKS.map((task, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ fontSize: 16, width: 24 }}>{task.emoji}</div>
+            <div style={{ fontSize: 11, color: C.textSec, fontFamily: 'monospace', width: 90, flexShrink: 0 }}>
+              {task.nombre}
+            </div>
+            <div style={{ flex: 1, height: 14, background: C.bgTer, borderRadius: 7, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', width: `${progress[i]}%`,
+                background: done[i] ? `linear-gradient(90deg, ${C.green}, #16a34a)` : `linear-gradient(90deg, ${C.cyan}, #0891b2)`,
+                borderRadius: 7, transition: 'width 0.06s linear, background 0.4s',
+                boxShadow: done[i] ? `0 0 8px ${C.green}60` : `0 0 6px ${C.cyan}40`,
+              }} />
+            </div>
+            <div style={{ width: 28, textAlign: 'center', fontSize: 14 }}>
+              {done[i] ? '✅' : `${progress[i]}%`}
+            </div>
+          </div>
+        ))}
+        {allDone && (
+          <div style={{ textAlign: 'center', fontSize: 13, color: C.green,
+            fontFamily: 'monospace', fontWeight: 700, marginTop: 4 }}>
+            🎉 Turno cerrado — Promise.all completado
+          </div>
+        )}
+      </div>
+    </MechanicWrapper>
+  );
+}
+
 // ─── Main export ───────────────────────────────────────────────────────────────
 export interface MechanicCanvasProps {
   mechanic:       LevelMechanic;
@@ -1444,8 +1964,14 @@ export default function MechanicCanvas({ mechanic, stampsRequired, stampedCount,
     case 'cards':      return <CardsMechanic      {...props} />;
     case 'detector':   return <DetectorMechanic   {...props} />;
     case 'panel':      return <PanelMechanic      {...props} />;
-    case 'pipeline':   return <PipelineMechanic   {...props} />;
-    default:           return null; // 'speech' uses FactoryCanvas
+    case 'pipeline':        return <PipelineMechanic      {...props} />;
+    case 'forge':           return <ForgeMechanic          {...props} />;
+    case 'blueprint':       return <BlueprintMechanic      {...props} />;
+    case 'recursion-tree':  return <RecursionTreeMechanic  {...props} />;
+    case 'bar-sort':        return <BarSortMechanic         {...props} />;
+    case 'maze':            return <MazeMechanic            {...props} />;
+    case 'parallel':        return <ParallelMechanic        {...props} />;
+    default:                return null; // 'speech' uses FactoryCanvas
   }
 }
 

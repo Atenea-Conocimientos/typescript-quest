@@ -20,8 +20,18 @@ import level10 from './phase4/level3';
 import level11 from './phase4/level4';
 import level12 from './phase4/level5';
 
-// Fase 5 — Patrones Avanzados
+// Fase 5 — Programación Funcional
 import level13 from './phase5/level1';
+
+// Fase 6 — Patrones Avanzados
+import level14 from './phase6/level1';
+import level15 from './phase6/level2';
+import level16 from './phase6/level3';
+
+// Fase 7 — Boss Stages: Algoritmos Reales
+import level17 from './phase7/level1';
+import level18 from './phase7/level2';
+import level19 from './phase7/level3';
 
 export const ALL_LEVELS: Level[] = [
   level1, level2, level3,
@@ -29,6 +39,8 @@ export const ALL_LEVELS: Level[] = [
   level6, level7,
   level8, level9, level10, level11, level12,
   level13,
+  level14, level15, level16,
+  level17, level18, level19,
 ];
 
 export const LEVELS_BY_ID: Record<string, Level> = ALL_LEVELS.reduce(

@@ -1,0 +1,51 @@
+import { Level } from '../../engine/types';
+
+const level19: Level = {
+  id: 'p7-l3',
+  phase: 7,
+  title: 'Fábrica Multi-Robot',
+  objective: 'Usá Promise.all para lanzar 4 tareas async en paralelo y esperar a que todas terminen.',
+  concept: 'Promise · async/await · Promise.all · try/catch',
+  mentor: 'athenix',
+  hint: 'async function siempre retorna Promise<T>. await pausa esa función (no todo el programa). Promise.all([p1, p2, p3]) espera TODAS en paralelo — mucho más rápido que await uno por uno. Siempre rodeá con try/catch.',
+  starterCode: `// async.ts — Fábrica multi-robot con Promise.all
+// 🎯 Objetivo:
+//    1. async function procesarTarea(nombre: string, ms: number): Promise<string>
+//       Espera ms milisegundos y retorna: "✅ [nombre] completado"
+//    2. async function turnoFinal(): Promise<void>
+//       Lanzá 4 tareas en paralelo con Promise.all()
+//    3. Imprimí cada resultado y al final: "🎉 Turno cerrado."
+//    💡 Usá ms pequeños (50–150) para no bloquear el runner
+
+// Tu código acá 👇
+`,
+  solution: `async function procesarTarea(nombre: string, ms: number): Promise<string> {
+  await new Promise(r => setTimeout(r, ms))
+  return \`✅ \${nombre} completado\`
+}
+
+async function turnoFinal(): Promise<void> {
+  console.log('🏭 Iniciando turno multi-robot...')
+  try {
+    const resultados = await Promise.all([
+      procesarTarea('Ensamblado', 50),
+      procesarTarea('Pintado', 80),
+      procesarTarea('Control QA', 30),
+      procesarTarea('Despacho', 100),
+    ])
+    resultados.forEach(r => console.log(r))
+    console.log('🎉 Turno cerrado.')
+  } catch (error) {
+    console.error('Robot falló:', error)
+  }
+}
+
+turnoFinal()`,
+  validate: (output: string[]) =>
+    output.some(l => l.includes('Turno cerrado')) &&
+    output.filter(l => l.includes('completado')).length >= 4,
+  stampsRequired: 1,
+  mechanic: 'parallel' as const,
+};
+
+export default level19;

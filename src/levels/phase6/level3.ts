@@ -1,0 +1,55 @@
+import { Level } from '../../engine/types';
+
+const level16: Level = {
+  id: 'p6-l3',
+  phase: 6,
+  title: 'Búsqueda en Profundidad',
+  objective: 'Implementá función recursiva contarTotal(caja) que cuenta TODAS las piezas en un árbol de cajas anidadas.',
+  concept: 'recursión · caso base · tipo recursivo',
+  mentor: 'hermes',
+  hint: 'Toda función recursiva tiene 2 partes: caso base (cuándo parar) + caso recursivo (llamarse con subproblema). Si no hay subcajas → retorná solo las piezas propias. Si hay → sumá propias + reduce sobre cada subcaja.',
+  starterCode: `// recursion.ts — Búsqueda recursiva en cajas anidadas
+// 🎯 Objetivo:
+//    1. Interface Caja con nombre: string, piezas: number, subcajas?: Caja[]
+//    2. Función contarTotal(caja: Caja): number (recursiva)
+//    3. Armar el depósito de prueba y llamar contarTotal
+//    4. Imprimir: "Total piezas: [número]"
+//
+//    El depósito: Principal(10) → A(50) → A1(20)
+//                              → B(30)
+//    Total esperado: 110
+
+// Tu código acá 👇
+`,
+  solution: `interface Caja {
+  nombre: string
+  piezas: number
+  subcajas?: Caja[]
+}
+
+function contarTotal(caja: Caja): number {
+  if (!caja.subcajas) return caja.piezas
+  return caja.piezas + caja.subcajas.reduce((acc, sub) => acc + contarTotal(sub), 0)
+}
+
+const deposito: Caja = {
+  nombre: 'Principal', piezas: 10,
+  subcajas: [
+    { nombre: 'A', piezas: 50, subcajas: [
+      { nombre: 'A1', piezas: 20 }
+    ]},
+    { nombre: 'B', piezas: 30 }
+  ]
+}
+
+console.log(\`Caja Principal: \${deposito.piezas} piezas directas\`)
+console.log(\`Caja A: \${deposito.subcajas[0].piezas} piezas\`)
+console.log(\`Caja B: \${deposito.subcajas[1].piezas} piezas\`)
+console.log(\`Total piezas: \${contarTotal(deposito)}\`)`,
+  validate: (output: string[]) =>
+    output.some(l => l.includes('Total piezas: 110')),
+  stampsRequired: 1,
+  mechanic: 'recursion-tree' as const,
+};
+
+export default level16;

@@ -13,7 +13,13 @@ export type LevelMechanic =
   | 'cards'       // p4-l3: interface/objects — product cards
   | 'detector'    // p4-l4: union types — type detector lights
   | 'panel'       // p4-l5: enum/switch — status control panel
-  | 'pipeline';   // p5-l1: filter/reduce — item pipeline
+  | 'pipeline'        // p5-l1: filter/reduce — item pipeline
+  | 'forge'           // p6-l1: generics — animated typed crates
+  | 'blueprint'       // p6-l2: classes — robot assembly card
+  | 'recursion-tree'  // p6-l3: recursion — tree node counter
+  | 'bar-sort'        // p7-l1: sorting — animated bar chart
+  | 'maze'            // p7-l2: DFS — grid maze navigation
+  | 'parallel';       // p7-l3: async/await — parallel progress bars
 
 export interface Mentor {
   id: MentorId;

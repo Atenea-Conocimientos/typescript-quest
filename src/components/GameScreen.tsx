@@ -115,7 +115,13 @@ export default function GameScreen() {
     cards:       `Completá los objetos y hacé click en 🗂️ PROCESAR CATÁLOGO para ver las fichas.`,
     detector:    `Completá el código y hacé click en 🔬 IDENTIFICAR PIEZA para activar el sensor.`,
     panel:       `Completá el enum y hacé click en 📊 ACTUALIZAR ESTADOS para ver el panel.`,
-    pipeline:    `Completá el pipeline y hacé click en 🔄 EJECUTAR PIPELINE para ver el filter/reduce.`,
+    pipeline:        `Completá el pipeline y hacé click en 🔄 EJECUTAR PIPELINE para ver el filter/reduce.`,
+    forge:           `Completá los generics y hacé click en ⚗️ FORJAR CAJAS para ver las cajas tipadas animarse.`,
+    blueprint:       `Definí la clase y hacé click en 🤖 ENSAMBLAR ROBOT para ver el blueprint armarse pieza a pieza.`,
+    'recursion-tree':`Implementá la recursión y hacé click en 🌳 CONTAR ÁRBOL para ver la propagación desde las hojas.`,
+    'bar-sort':      `Implementá el sort y hacé click en 📊 ORDENAR LOTE para ver las barras ordenarse.`,
+    maze:            `Implementá DFS y hacé click en 🔍 BUSCAR CAMINO para ver al robot navegar el laberinto.`,
+    parallel:        `Implementá las Promises y hacé click en ⚡ LANZAR TURNO para ver los robots trabajar en paralelo.`,
   };
 
   return (
